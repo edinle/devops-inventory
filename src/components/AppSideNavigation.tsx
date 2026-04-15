@@ -98,6 +98,8 @@ function NavRow({
 }
 
 export default function AppSideNavigation({ activeView, onSelect }: Props) {
+  const FooterScreen = resolveAtlaskitIcon(ScreenIcon);
+
   return (
     <div
       className="app-side-nav"
@@ -144,7 +146,7 @@ export default function AppSideNavigation({ activeView, onSelect }: Props) {
 
       <Box style={{ marginTop: 'auto', padding: 16, borderTop: '1px solid #EBECF0' }}>
         <Stack space="space.100" alignInline="center">
-          <ScreenIcon label="Managed" spacing="spacious" />
+          <FooterScreen label="Managed" spacing="spacious" />
           <Box style={{ textAlign: 'center' }}>
             <Text size="small" color="color.text.subtle">
               You are in a team-managed project
