@@ -248,7 +248,6 @@ function Column({
   items,
   checkouts,
   users,
-  isDropDisabled,
   draggingItemId,
   onDropItem,
   onAddCard,
@@ -292,7 +291,6 @@ function Column({
       <Box
         ref={colRef}
         onDragOver={(event: React.DragEvent<HTMLDivElement>) => {
-          if (isDropDisabled) return;
           event.preventDefault();
           setIsDragOver(true);
         }}
@@ -300,7 +298,6 @@ function Column({
         onDrop={(event: React.DragEvent<HTMLDivElement>) => {
           event.preventDefault();
           setIsDragOver(false);
-          if (isDropDisabled) return;
           const itemId = event.dataTransfer.getData('text/plain');
           if (itemId) {
             onDropItem(itemId, id);
@@ -411,13 +408,27 @@ export default function Dashboard({
   function handleDropItem(equipmentId: string, destinationColumnId: string) {
     const item = equipment.find(entry => entry.id === equipmentId);
     if (!item || item.status === 'archived') return;
-    if (item.status === 'checked_out' || destinationColumnId === 'checked-out') return;
+
+    const isCheckedOutColumn = destinationColumnId === 'checked-out';
+    const isCategoryColumn = categories.some(category => category.id === destinationColumnId);
+
+    if (item.status === 'checked_out') {
+      if (!isCategoryColumn) return;
+      setDraggingItemId(null);
+      setCheckInItem(item);
+      return;
+    }
+
+    if (isCheckedOutColumn) {
+      setDraggingItemId(null);
+      setCheckOutItem(item);
+      return;
+    }
 
     const sourceColumnId = getColumnForItem(item);
     if (sourceColumnId === destinationColumnId) return;
 
-    const isValidCategory = categories.some(category => category.id === destinationColumnId);
-    if (!isValidCategory) return;
+    if (!isCategoryColumn) return;
 
     setItemColumnOverrides(prev => ({
       ...prev,
@@ -524,7 +535,6 @@ export default function Dashboard({
               items={col.items}
               checkouts={checkouts}
               users={users}
-              isDropDisabled={col.id === 'checked-out'}
               draggingItemId={draggingItemId}
               onDropItem={handleDropItem}
               onAddCard={handleAddCard}
