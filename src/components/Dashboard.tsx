@@ -92,13 +92,22 @@ function EquipmentCard({
       <Box
         style={{
           background: '#FFFFFF',
-          borderRadius: 12,
-          boxShadow: '0 1px 2px rgba(9, 30, 66, 0.18), 0 4px 12px rgba(9, 30, 66, 0.08)',
-          border: '1px solid rgba(9, 30, 66, 0.08)',
+          borderRadius: 14,
+          boxShadow: '0 1px 2px rgba(31, 45, 61, 0.12), 0 6px 18px rgba(31, 45, 61, 0.10)',
+          border: '1px solid #E6EAF4',
           overflow: 'hidden',
         }}
       >
-        <Box style={{ height: 6, background: labelColor }} />
+        <Box style={{ padding: '10px 12px 0' }}>
+          <Box
+            style={{
+              width: 58,
+              height: 8,
+              borderRadius: 999,
+              background: labelColor,
+            }}
+          />
+        </Box>
 
         <Box style={{ padding: '10px 12px 12px' }}>
         <Inline space="space.050" alignBlock="center">
@@ -115,7 +124,7 @@ function EquipmentCard({
         </Inline>
 
         {item.conditionNotes.length > 0 && (
-          <Box style={{ marginTop: 4, color: '#97A0AF' }}>
+          <Box style={{ marginTop: 8, color: '#6B778C', background: '#F7F8FC', borderRadius: 8, padding: '6px 8px' }}>
             <Text as="em" size="small" color="inherit">
               {item.conditionNotes[item.conditionNotes.length - 1]}
             </Text>
@@ -130,16 +139,17 @@ function EquipmentCard({
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: 4,
-                  background: '#FF5630',
+                  background: '#FFEBE6',
+                  border: '1px solid #FFD5CC',
                   color: '#FFFFFF',
                   borderRadius: 6,
-                  padding: '2px 8px',
+                  padding: '3px 8px',
                   fontSize: 11,
                   fontWeight: 600,
                 }}
               >
                 <Warning label="Overdue" spacing="spacious" />
-                <span>Overdue {new Date(checkout.dueAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                <span style={{ color: '#C9372C' }}>Overdue {new Date(checkout.dueAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
               </Box>
             ) : (
               <Box
@@ -147,10 +157,11 @@ function EquipmentCard({
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: 4,
-                  background: '#E3FCEF',
+                  background: '#EAFBF2',
+                  border: '1px solid #C7EDD8',
                   color: '#006644',
                   borderRadius: 6,
-                  padding: '2px 8px',
+                  padding: '3px 8px',
                   fontSize: 11,
                   fontWeight: 600,
                 }}
@@ -170,7 +181,7 @@ function EquipmentCard({
               </Tooltip>
             )}
             {borrower && (
-              <Box style={{ color: '#5E6C84' }}>
+              <Box style={{ color: '#5E6C84', maxWidth: 132 }}>
                 <Text as="span" size="small" color="inherit">
                   {borrower.fullName}
                 </Text>
@@ -182,7 +193,7 @@ function EquipmentCard({
             {isCheckedOut ? (
               <>
                 <Button
-                  appearance="primary"
+                  appearance="default"
                   spacing="compact"
                   onClick={(e) => {
                     e.stopPropagation();
@@ -192,7 +203,7 @@ function EquipmentCard({
                   Return
                 </Button>
                 <Button
-                  appearance="subtle"
+                  appearance="warning"
                   spacing="compact"
                   onClick={(e) => {
                     e.stopPropagation();
@@ -204,7 +215,7 @@ function EquipmentCard({
               </>
             ) : (
               <Button
-                appearance="primary"
+                appearance="default"
                 spacing="compact"
                 onClick={(e) => {
                   e.stopPropagation();
@@ -266,12 +277,12 @@ function Column({
   const overdueInCol = items.filter(item => checkouts.find(c => c.equipmentId === item.id)?.isOverdue).length;
 
   return (
-    <Box style={{ width: 272, flexShrink: 0, display: 'flex', flexDirection: 'column', maxHeight: '100%' }}>
+    <Box style={{ width: 320, flexShrink: 0, display: 'flex', flexDirection: 'column', maxHeight: '100%' }}>
       {/* List header */}
-      <Box style={{ padding: '10px 10px 8px' }}>
+      <Box style={{ padding: '12px 12px 8px' }}>
         <Inline space="space.100" alignBlock="center" spread="space-between">
           <Inline space="space.100" alignBlock="center">
-            <Box style={{ width: 10, height: 10, borderRadius: 999, background: color, flexShrink: 0 }} />
+            <Box style={{ width: 10, height: 10, borderRadius: 999, background: color, flexShrink: 0, boxShadow: `0 0 0 4px ${color}22` }} />
             <Box style={{ color: '#172B4D' }}>
               <Text as="strong" weight="bold" size="medium" color="inherit">
                 {title}
@@ -306,9 +317,9 @@ function Column({
         style={{
           flex: 1,
           overflowY: 'auto',
-          padding: '0 8px 8px',
-          background: isDragOver ? 'rgba(9,30,66,0.08)' : 'transparent',
-          borderRadius: '0 0 8px 8px',
+          padding: '2px 10px 10px',
+          background: isDragOver ? 'rgba(9,30,66,0.08)' : 'rgba(255,255,255,0.26)',
+          borderRadius: '0 0 12px 12px',
           minHeight: '40px',
           transition: 'background 0.15s',
         }}
@@ -341,7 +352,7 @@ function Column({
             );
           })
         )}
-        <Box style={{ paddingTop: 4 }}>
+        <Box style={{ paddingTop: 6 }}>
           <Button appearance="subtle" spacing="compact" iconBefore={Add} onClick={() => onAddCard(id)}>
             Add a card
           </Button>
@@ -489,9 +500,9 @@ export default function Dashboard({
           overflowY: 'hidden',
           display: 'flex',
           alignItems: 'flex-start',
-          padding: '14px 16px',
+          padding: '16px 16px 18px',
           gap: '12px',
-          background: 'linear-gradient(135deg, #0B66E4 0%, #0052CC 100%)',
+          background: 'radial-gradient(circle at top right, #A95CC5 0%, #7A4DB8 38%, #344EAD 100%)',
         }}
       >
         {/* Each "list" is a Trello list container */}
@@ -518,14 +529,14 @@ export default function Dashboard({
           <div
             key={col.id}
             style={{
-              background: '#DFE1E6',
-              borderRadius: '10px',
-              width: '272px',
+              background: '#EEF1F8',
+              borderRadius: '14px',
+              width: '320px',
               flexShrink: 0,
               display: 'flex',
               flexDirection: 'column',
               maxHeight: 'calc(100vh - 88px)',
-              boxShadow: '0 6px 16px rgba(9,30,66,0.18)',
+              boxShadow: '0 10px 24px rgba(17, 31, 67, 0.24)',
             }}
           >
             <Column
