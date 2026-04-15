@@ -6,16 +6,14 @@ import Lozenge from '@atlaskit/lozenge';
 import Badge from '@atlaskit/badge';
 import { Box, Inline, Text } from '@atlaskit/primitives';
 import AddIcon from '@atlaskit/icon/core/add';
-import ClockIcon from '@atlaskit/icon/core/clock';
-import StatusWarningIcon from '@atlaskit/icon/core/status-warning';
 import ShowMoreHorizontalIcon from '@atlaskit/icon/core/show-more-horizontal';
-import EditIcon from '@atlaskit/icon/core/edit';
+import CheckMarkIcon from '@atlaskit/icon/core/check-mark';
+import CrossIcon from '@atlaskit/icon/core/cross';
 import { resolveAtlaskitIcon } from '../utils/resolveAtlaskitIcon';
 import type { Equipment, Checkout, Category, User, ActivityEntry } from '../types';
 import CheckOutModal from './CheckOutModal';
 import CheckInModal from './CheckInModal';
 import CardDetailModal from './CardDetailModal';
-import EditColumnModal from './EditColumnModal';
 
 type Props = {
   equipment: Equipment[];
@@ -34,10 +32,20 @@ type Props = {
   onUpdateCategory: (id: string, name: string, color: string) => void;
 };
 
-// Trello-style label strip colors
-const LABEL_OVERDUE = '#FF5630';
+// Left-accent label colors
+const LABEL_OVERDUE     = '#FF5630';
 const LABEL_CHECKED_OUT = '#36B37E';
-const LABEL_AVAILABLE = '#DFE1E6';
+const LABEL_AVAILABLE   = '#DFE1E6';
+
+// Colour palette shown in the column header picker
+const COLOR_PALETTE = [
+  '#0052CC', '#1868DB', '#00875A', '#36B37E',
+  '#FF991F', '#FFAB00', '#FF5630', '#DE350B',
+  '#6554C0', '#8777D9', '#00B8D9', '#00A3BF',
+  '#6B7780', '#172B4D',
+];
+
+// ─── Card ────────────────────────────────────────────────────────────────────
 
 type CardProps = {
   item: Equipment;
@@ -65,27 +73,20 @@ function EquipmentCard({
   onOpenDetails,
 }: CardProps) {
   const isCheckedOut = item.status === 'checked_out';
-  const isOverdue = checkout?.isOverdue ?? false;
-  const Clock = resolveAtlaskitIcon(ClockIcon);
-  const Warning = resolveAtlaskitIcon(StatusWarningIcon);
+  const isOverdue    = checkout?.isOverdue ?? false;
 
-  const labelColor = isOverdue ? LABEL_OVERDUE : isCheckedOut ? LABEL_CHECKED_OUT : LABEL_AVAILABLE;
-  const handleOpenDetails = () => {
-    if (!isDragging) {
-      onOpenDetails();
-    }
-  };
+  const accentColor = isOverdue ? LABEL_OVERDUE : isCheckedOut ? LABEL_CHECKED_OUT : LABEL_AVAILABLE;
 
   return (
     <div
       draggable
-      onDragStart={(event) => {
-        event.dataTransfer.setData('text/plain', item.id);
-        event.dataTransfer.effectAllowed = 'move';
+      onDragStart={(e) => {
+        e.dataTransfer.setData('text/plain', item.id);
+        e.dataTransfer.effectAllowed = 'move';
         onDragStart(item.id);
       }}
       onDragEnd={onDragEnd}
-      onClick={handleOpenDetails}
+      onClick={() => { if (!isDragging) onOpenDetails(); }}
       style={{
         marginBottom: 10,
         cursor: 'grab',
@@ -94,88 +95,104 @@ function EquipmentCard({
         transition: 'opacity 0.12s ease, transform 0.12s ease',
       }}
     >
-      <Box style={{ background: '#FFFFFF', borderRadius: 14, boxShadow: '0 1px 2px rgba(31, 45, 61, 0.12), 0 6px 18px rgba(31, 45, 61, 0.10)', border: '1px solid #E6EAF4', overflow: 'hidden' }}>
-        {/* Trello-style label strip */}
-        <Box
-          style={{
-            width: 58,
-            height: 8,
-            borderRadius: 999,
-            background: labelColor,
-          }}
-        />
-        <Box style={{ padding: '8px 12px' }}>
-          <Box style={{ color: '#6B778C', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 8 }}>
-            <Box>
-              <Text as="strong" weight="semibold" size="small" color="inherit">
-                {item.name}
-              </Text>
-              <Text size="small" color="inherit">
-                {item.tagNumber}
-              </Text>
-            </Box>
+      <Box
+        style={{
+          background: '#FFFFFF',
+          borderRadius: 12,
+          boxShadow: '0 1px 3px rgba(31,45,61,0.10), 0 4px 14px rgba(31,45,61,0.08)',
+          border: '1px solid #E6EAF4',
+          overflow: 'hidden',
+          display: 'flex',
+        }}
+      >
+        {/* Left accent bar */}
+        <Box style={{ width: 5, background: accentColor, flexShrink: 0 }} />
+
+        {/* Card body */}
+        <Box style={{ padding: '12px 14px 12px', flex: 1, minWidth: 0 }}>
+
+          {/* ── Name row ── */}
+          <Box style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8, marginBottom: 4 }}>
+            <Text as="strong" weight="semibold" size="medium" color="color.text">
+              {item.name}
+            </Text>
             {isOverdue && (
-              <Lozenge appearance="removed">Overdue</Lozenge>
+              <Box style={{ flexShrink: 0 }}>
+                <Lozenge appearance="removed">Overdue</Lozenge>
+              </Box>
             )}
           </Box>
 
+          {/* ── Tag number ── */}
+          <Box style={{ marginBottom: 10 }}>
+            <Text size="small" color="color.text.subtlest">
+              {item.tagNumber}
+            </Text>
+          </Box>
+
+          {/* ── Condition note ── */}
           {item.conditionNotes.length > 0 && (
-            <Box style={{ marginTop: 8, color: '#6B778C', background: '#F7F8FC', borderRadius: 8, padding: '6px 8px' }}>
-              <Text as="em" size="small" color="inherit">
+            <Box
+              style={{
+                marginBottom: 12,
+                background: '#F7F8FC',
+                borderRadius: 8,
+                padding: '7px 10px',
+                borderLeft: '3px solid #DFE1E6',
+              }}
+            >
+              <Text as="em" size="small" color="color.text.subtle">
                 {item.conditionNotes[item.conditionNotes.length - 1]}
               </Text>
             </Box>
           )}
 
-          {isCheckedOut && (
-            <Box style={{ marginTop: 8, display: 'inline-flex', alignItems: 'center', gap: 4, background: '#FFEBE6', border: '1px solid #FFD5CC', color: '#FFFFFF', borderRadius: 6, padding: '6px 8px' }}>
-              <Text as="strong" weight="semibold" size="small" color="inherit">
-                Checked Out
-              </Text>
-            </Box>
-          )}
-          {isOverdue && (
-            <Box style={{ marginTop: 8, display: 'inline-flex', alignItems: 'center', gap: 4, background: '#EAFBF2', border: '1px solid #C7EDD8', color: '#006644', borderRadius: 6, padding: '3px 8px', fontSize: 11, fontWeight: 600, }}>
-              <Text as="strong" weight="semibold" size="small" color="inherit">
-                Overdue
-              </Text>
-            </Box>
-          )}
-          <Inline space="space.100" alignBlock="center" spread="space-between">
-            <Inline space="space.050" alignBlock="center">
-              {borrower && (
-                <Tooltip content={borrower.fullName}>
-                  <Avatar size="small" name={borrower.fullName} />
-                </Tooltip>
+          {/* ── Bottom row: borrower + actions ── */}
+          <Box
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 8,
+              marginTop: 4,
+            }}
+          >
+            {/* Borrower avatar + name */}
+            <Box style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+              {borrower ? (
+                <>
+                  <Tooltip content={borrower.fullName}>
+                    <Avatar size="small" name={borrower.fullName} />
+                  </Tooltip>
+                  <Box style={{ minWidth: 0 }}>
+                    <Text
+                      size="small"
+                      color="color.text.subtle"
+                    >
+                      {borrower.fullName}
+                    </Text>
+                  </Box>
+                </>
+              ) : (
+                <Box style={{ height: 24 }} />
               )}
-              {borrower && (
-                <Box style={{ color: '#5E6C84', maxWidth: 132 }}>
-                  <Text as="span" size="small" color="inherit">
-                    {borrower.fullName}
-                  </Text>
-                </Box>
-              )}
-            </Inline>
-            <Inline space="space.050" alignBlock="center">
+            </Box>
+
+            {/* Action buttons */}
+            <Box style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
               {isCheckedOut ? (
                 <>
                   <Button
                     appearance="default"
                     spacing="compact"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onCheckIn();
-                    }}
+                    onClick={(e) => { e.stopPropagation(); onCheckIn(); }}
                   >
                     Return
                   </Button>
                   <Button
                     appearance="warning"
                     spacing="compact"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onSendReminder();
-                    }}
+                    onClick={(e) => { e.stopPropagation(); onSendReminder(); }}
                   >
                     Remind
                   </Button>
@@ -184,21 +201,20 @@ function EquipmentCard({
                 <Button
                   appearance="primary"
                   spacing="compact"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onCheckOut();
-                  }}
+                  onClick={(e) => { e.stopPropagation(); onCheckOut(); }}
                 >
                   Check Out
                 </Button>
               )}
-            </Inline>
-          </Inline>
+            </Box>
+          </Box>
         </Box>
       </Box>
     </div>
   );
 }
+
+// ─── Column ──────────────────────────────────────────────────────────────────
 
 type ColumnProps = {
   id: string;
@@ -207,7 +223,7 @@ type ColumnProps = {
   items: Equipment[];
   checkouts: Checkout[];
   users: User[];
-  isDropDisabled?: boolean;
+  isEditable?: boolean;
   draggingItemId?: string | null;
   onDropItem: (itemId: string, destinationColumnId: string) => void;
   onAddCard: (columnId: string) => void;
@@ -217,8 +233,7 @@ type ColumnProps = {
   onCheckIn: (item: Equipment) => void;
   onSendReminder: (item: Equipment) => void;
   onOpenDetails: (item: Equipment) => void;
-  role?: string;
-  onEditColumn?: (columnId: string) => void;
+  onUpdateColumn?: (id: string, name: string, color: string) => void;
 };
 
 function Column({
@@ -228,6 +243,7 @@ function Column({
   items,
   checkouts,
   users,
+  isEditable = false,
   draggingItemId,
   onDropItem,
   onAddCard,
@@ -237,86 +253,256 @@ function Column({
   onCheckIn,
   onSendReminder,
   onOpenDetails,
-  role,
-  onEditColumn,
+  onUpdateColumn,
 }: ColumnProps) {
-  const colRef = useRef<HTMLDivElement>(null);
-  const [isDragOver, setIsDragOver] = useState(false);
-  const MoreH = resolveAtlaskitIcon(ShowMoreHorizontalIcon);
-  const Add = resolveAtlaskitIcon(AddIcon);
-  const Edit = resolveAtlaskitIcon(EditIcon);
+  const colRef          = useRef<HTMLDivElement>(null);
+  const nameInputRef    = useRef<HTMLInputElement>(null);
+  const colorPickerRef  = useRef<HTMLDivElement>(null);
 
-  const overdueInCol = items.filter(item => checkouts.find(c => c.equipmentId === item.id)?.isOverdue).length;
+  const [isDragOver,      setIsDragOver]      = useState(false);
+  const [isEditingName,   setIsEditingName]   = useState(false);
+  const [draftName,       setDraftName]       = useState(title);
+  const [showColorPicker, setShowColorPicker] = useState(false);
+  const [draftColor,      setDraftColor]      = useState(color);
+
+  const MoreH   = resolveAtlaskitIcon(ShowMoreHorizontalIcon);
+  const Check   = resolveAtlaskitIcon(CheckMarkIcon);
+  const Cross   = resolveAtlaskitIcon(CrossIcon);
+  const Add     = resolveAtlaskitIcon(AddIcon);
+
+  const overdueInCol = items.filter(item =>
+    checkouts.find(c => c.equipmentId === item.id)?.isOverdue
+  ).length;
+
+  // Sync if parent title/color changes
+  useEffect(() => { setDraftName(title); }, [title]);
+  useEffect(() => { setDraftColor(color); }, [color]);
+
+  // Focus input when entering edit mode
+  useEffect(() => {
+    if (isEditingName) nameInputRef.current?.select();
+  }, [isEditingName]);
+
+  // Close color picker on outside click
+  useEffect(() => {
+    if (!showColorPicker) return;
+    function handleClick(e: MouseEvent) {
+      if (colorPickerRef.current && !colorPickerRef.current.contains(e.target as Node)) {
+        setShowColorPicker(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [showColorPicker]);
+
+  function commitName() {
+    const trimmed = draftName.trim();
+    if (trimmed && trimmed !== title) {
+      onUpdateColumn?.(id, trimmed, draftColor);
+    } else {
+      setDraftName(title);
+    }
+    setIsEditingName(false);
+  }
+
+  function commitColor(c: string) {
+    setDraftColor(c);
+    setShowColorPicker(false);
+    onUpdateColumn?.(id, draftName.trim() || title, c);
+  }
+
+  function handleNameKeyDown(e: React.KeyboardEvent) {
+    if (e.key === 'Enter') commitName();
+    if (e.key === 'Escape') { setDraftName(title); setIsEditingName(false); }
+  }
 
   return (
-    <Box style={{ width: 320, flexShrink: 0, display: 'flex', flexDirection: 'column', height: '100%' }}>
-      {/* List header */}
-      <Box style={{ padding: '12px 12px 8px' }}>
+    <Box style={{ width: 300, flexShrink: 0, display: 'flex', flexDirection: 'column', height: '100%' }}>
+
+      {/* ── Column header ── */}
+      <Box style={{ padding: '12px 12px 8px', position: 'relative' }}>
         <Inline space="space.100" alignBlock="center" spread="space-between">
-          <Inline space="space.100" alignBlock="center">
-            <Box style={{ width: 10, height: 10, borderRadius: 999, background: color, flexShrink: 0, boxShadow: `0 0 0 4px ${color}22` }} />
-            <Box style={{ color: '#172B4D' }}>
-              <Text as="strong" weight="bold" size="medium" color="inherit">
-                {title}
-              </Text>
-            </Box>
-            {overdueInCol > 0 && <Badge appearance="important">{overdueInCol}</Badge>}
-          </Inline>
-          <Inline space="space.050" alignBlock="center">
-            <Inline space="space.050" alignBlock="center">
-              <Badge>{items.length}</Badge>
-              <Box style={{ display: 'flex', gap: 4 }}>
-                {role === 'super_admin' && (
-                  <IconButton
-                    appearance="subtle"
-                    icon={Edit}
-                    onClick={() => onEditColumn?.(id)}
-                    label="Edit column"
+
+          {/* Left: color dot + name */}
+          <Inline space="space.075" alignBlock="center" grow="fill">
+
+            {/* Color swatch / picker trigger */}
+            {isEditable ? (
+              <Box style={{ position: 'relative', flexShrink: 0 }}>
+                <Tooltip content="Change color">
+                  <button
+                    onClick={() => setShowColorPicker(v => !v)}
+                    style={{
+                      width: 18,
+                      height: 18,
+                      borderRadius: '50%',
+                      background: draftColor,
+                      border: '2px solid rgba(255,255,255,0.7)',
+                      boxShadow: `0 0 0 2px ${draftColor}55`,
+                      cursor: 'pointer',
+                      padding: 0,
+                      outline: 'none',
+                      transition: 'box-shadow 0.15s',
+                    }}
                   />
+                </Tooltip>
+
+                {/* Color picker popover */}
+                {showColorPicker && (
+                  <Box
+                    ref={colorPickerRef}
+                    style={{
+                      position: 'absolute',
+                      top: 26,
+                      left: 0,
+                      zIndex: 400,
+                      background: '#fff',
+                      borderRadius: 10,
+                      boxShadow: '0 8px 24px rgba(9,30,66,0.22)',
+                      border: '1px solid #E6EAF4',
+                      padding: 10,
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(7, 24px)',
+                      gap: 6,
+                    }}
+                  >
+                    {COLOR_PALETTE.map(c => (
+                      <Tooltip key={c} content={c}>
+                        <button
+                          onClick={() => commitColor(c)}
+                          style={{
+                            width: 24,
+                            height: 24,
+                            borderRadius: '50%',
+                            background: c,
+                            border: c === draftColor
+                              ? '3px solid #172B4D'
+                              : '2px solid rgba(0,0,0,0.08)',
+                            cursor: 'pointer',
+                            padding: 0,
+                            outline: 'none',
+                            transition: 'transform 0.1s',
+                          }}
+                          onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.18)')}
+                          onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}
+                        />
+                      </Tooltip>
+                    ))}
+                  </Box>
                 )}
-                <IconButton appearance="subtle" icon={MoreH} label="List actions" />
               </Box>
-            </Inline>
+            ) : (
+              <Box
+                style={{
+                  width: 12,
+                  height: 12,
+                  borderRadius: '50%',
+                  background: color,
+                  flexShrink: 0,
+                  boxShadow: `0 0 0 3px ${color}33`,
+                }}
+              />
+            )}
+
+            {/* Column name — inline edit */}
+            {isEditable && isEditingName ? (
+              <Box style={{ display: 'flex', alignItems: 'center', gap: 4, flex: 1 }}>
+                <input
+                  ref={nameInputRef}
+                  value={draftName}
+                  onChange={e => setDraftName(e.target.value)}
+                  onKeyDown={handleNameKeyDown}
+                  onBlur={commitName}
+                  style={{
+                    flex: 1,
+                    fontSize: 14,
+                    fontWeight: 700,
+                    color: '#172B4D',
+                    border: 'none',
+                    borderBottom: '2px solid #0052CC',
+                    background: 'transparent',
+                    outline: 'none',
+                    padding: '2px 0',
+                    minWidth: 0,
+                    lineHeight: 1.4,
+                  }}
+                />
+                <button
+                  onMouseDown={e => { e.preventDefault(); commitName(); }}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2, color: '#00875A', display: 'flex' }}
+                >
+                  <Check label="Save" size="small" />
+                </button>
+                <button
+                  onMouseDown={e => { e.preventDefault(); setDraftName(title); setIsEditingName(false); }}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2, color: '#FF5630', display: 'flex' }}
+                >
+                  <Cross label="Cancel" size="small" />
+                </button>
+              </Box>
+            ) : (
+              <Box
+                style={{ color: '#172B4D', flex: 1, minWidth: 0 }}
+                onClick={isEditable ? () => setIsEditingName(true) : undefined}
+              >
+                <Text
+                  as="strong"
+                  weight="bold"
+                  size="medium"
+                  color="inherit"
+                >
+                  {isEditable ? draftName || title : title}
+                </Text>
+                {isEditable && (
+                  <Text size="small" color="color.text.subtlest"> ✎</Text>
+                )}
+              </Box>
+            )}
+          </Inline>
+
+          {/* Right: overdue badge + count + more */}
+          <Inline space="space.050" alignBlock="center">
+            {overdueInCol > 0 && <Badge appearance="important">{overdueInCol}</Badge>}
+            <Badge>{items.length}</Badge>
+            <IconButton appearance="subtle" icon={MoreH} label="List actions" />
           </Inline>
         </Inline>
       </Box>
 
-      {/* Card list */}
+      {/* ── Card list ── */}
       <Box
         ref={colRef}
-        onDragOver={(event: React.DragEvent<HTMLDivElement>) => {
-          event.preventDefault();
-          setIsDragOver(true);
-        }}
+        onDragOver={(e: React.DragEvent<HTMLDivElement>) => { e.preventDefault(); setIsDragOver(true); }}
         onDragLeave={() => setIsDragOver(false)}
-        onDrop={(event: React.DragEvent<HTMLDivElement>) => {
-          event.preventDefault();
+        onDrop={(e: React.DragEvent<HTMLDivElement>) => {
+          e.preventDefault();
           setIsDragOver(false);
-          const itemId = event.dataTransfer.getData('text/plain');
-          if (itemId) {
-            onDropItem(itemId, id);
-          }
+          const itemId = e.dataTransfer.getData('text/plain');
+          if (itemId) onDropItem(itemId, id);
         }}
         style={{
           flex: 1,
           overflowY: 'auto',
-          padding: '2px 10px 10px',
+          padding: '4px 10px 10px',
           background: isDragOver ? 'rgba(9,30,66,0.08)' : 'rgba(255,255,255,0.26)',
           borderRadius: '0 0 12px 12px',
-          minHeight: '40px',
+          minHeight: 40,
           transition: 'background 0.15s',
         }}
       >
         {items.length === 0 ? (
           <Box style={{
-            textAlign: 'center', color: 'rgba(9,30,66,0.35)',
-            fontSize: '12px', padding: '16px 8px', fontStyle: 'italic',
+            textAlign: 'center',
+            color: 'rgba(9,30,66,0.35)',
+            fontSize: 12,
+            padding: '16px 8px',
+            fontStyle: 'italic',
           }}>
             No items
           </Box>
         ) : (
           items.map(item => {
-            const checkout = checkouts.find(c => c.equipmentId === item.id) ?? undefined;
+            const checkout = checkouts.find(c => c.equipmentId === item.id);
             const borrower = checkout ? users.find(u => u.id === checkout.userId) : undefined;
             return (
               <EquipmentCard
@@ -345,6 +531,8 @@ function Column({
   );
 }
 
+// ─── Dashboard ───────────────────────────────────────────────────────────────
+
 export default function Dashboard({
   equipment,
   checkouts,
@@ -361,13 +549,12 @@ export default function Dashboard({
   onEditItem,
   onUpdateCategory,
 }: Props) {
-  const [checkOutItem, setCheckOutItem] = useState<Equipment | null>(null);
-  const [checkInItem, setCheckInItem] = useState<Equipment | null>(null);
-  const [detailItem, setDetailItem] = useState<Equipment | null>(null);
-  const [draggingItemId, setDraggingItemId] = useState<string | null>(null);
+  const [checkOutItem,        setCheckOutItem]        = useState<Equipment | null>(null);
+  const [checkInItem,         setCheckInItem]         = useState<Equipment | null>(null);
+  const [detailItem,          setDetailItem]          = useState<Equipment | null>(null);
+  const [draggingItemId,      setDraggingItemId]      = useState<string | null>(null);
   const [itemColumnOverrides, setItemColumnOverrides] = useState<Record<string, string>>({});
-  const [columnItems, setColumnItems] = useState<Record<string, string[]>>({});
-  const [editingColumn, setEditingColumn] = useState<string | null>(null);
+  const [columnItems,         setColumnItems]         = useState<Record<string, string[]>>({});
 
   const checkedOutItems = equipment.filter(e => e.status === 'checked_out');
 
@@ -385,16 +572,15 @@ export default function Dashboard({
         .map(item => item.id);
 
       const existingCheckedOut = (prev['checked-out'] ?? []).filter(id => checkedOutIds.includes(id));
-      const newCheckedOut = checkedOutIds.filter(id => !existingCheckedOut.includes(id));
-      next['checked-out'] = [...existingCheckedOut, ...newCheckedOut];
+      const newCheckedOut      = checkedOutIds.filter(id => !existingCheckedOut.includes(id));
+      next['checked-out']      = [...existingCheckedOut, ...newCheckedOut];
 
       categories.forEach(category => {
-        const ids = equipment
+        const ids     = equipment
           .filter(item => item.status !== 'archived' && item.status !== 'checked_out' && getColumnForItem(item) === category.id)
           .map(item => item.id);
-
         const existing = (prev[category.id] ?? []).filter(id => ids.includes(id));
-        const added = ids.filter(id => !existing.includes(id));
+        const added    = ids.filter(id => !existing.includes(id));
         next[category.id] = [...existing, ...added];
       });
 
@@ -403,11 +589,11 @@ export default function Dashboard({
   }, [equipment, categories, itemColumnOverrides]);
 
   function handleDropItem(equipmentId: string, destinationColumnId: string) {
-    const item = equipment.find(entry => entry.id === equipmentId);
+    const item = equipment.find(e => e.id === equipmentId);
     if (!item || item.status === 'archived') return;
 
     const isCheckedOutColumn = destinationColumnId === 'checked-out';
-    const isCategoryColumn = categories.some(category => category.id === destinationColumnId);
+    const isCategoryColumn   = categories.some(c => c.id === destinationColumnId);
 
     if (item.status === 'checked_out') {
       if (!isCategoryColumn) return;
@@ -415,7 +601,6 @@ export default function Dashboard({
       setCheckInItem(item);
       return;
     }
-
     if (isCheckedOutColumn) {
       setDraggingItemId(null);
       setCheckOutItem(item);
@@ -423,18 +608,12 @@ export default function Dashboard({
     }
 
     const sourceColumnId = getColumnForItem(item);
-    if (sourceColumnId === destinationColumnId) return;
+    if (sourceColumnId === destinationColumnId || !isCategoryColumn) return;
 
-    if (!isCategoryColumn) return;
-
-    setItemColumnOverrides(prev => ({
-      ...prev,
-      [equipmentId]: destinationColumnId,
-    }));
-
+    setItemColumnOverrides(prev => ({ ...prev, [equipmentId]: destinationColumnId }));
     setColumnItems(prev => {
-      const next: Record<string, string[]> = { ...prev };
-      next[sourceColumnId] = (next[sourceColumnId] ?? []).filter(id => id !== equipmentId);
+      const next = { ...prev };
+      next[sourceColumnId]      = (next[sourceColumnId] ?? []).filter(id => id !== equipmentId);
       next[destinationColumnId] = [...(next[destinationColumnId] ?? []).filter(id => id !== equipmentId), equipmentId];
       return next;
     });
@@ -442,20 +621,13 @@ export default function Dashboard({
 
   function handleAddCard(columnId: string) {
     if (columnId === 'checked-out') return;
-    const category = categories.find(entry => entry.id === columnId);
+    const category = categories.find(c => c.id === columnId);
     if (!category) return;
-
-    const name = window.prompt(`New item name for ${category.name}`)?.trim();
+    const name      = window.prompt(`New item name for ${category.name}`)?.trim();
     if (!name) return;
     const tagNumber = window.prompt('Tag number (e.g. #20)')?.trim();
     if (!tagNumber) return;
-
-    onAddEquipment({
-      name,
-      tagNumber,
-      categoryId: category.id,
-      status: 'available',
-    });
+    onAddEquipment({ name, tagNumber, categoryId: category.id, status: 'available' });
   }
 
   function handleCheckOut(co: Omit<Checkout, 'id'>) {
@@ -476,9 +648,31 @@ export default function Dashboard({
   const checkInCheckout = checkInItem ? checkouts.find(c => c.equipmentId === checkInItem.id) : null;
   const checkInBorrower = checkInCheckout ? users.find(u => u.id === checkInCheckout.userId) : undefined;
 
+  const columns = [
+    {
+      id: 'checked-out',
+      title: 'Checked Out',
+      color: '#172B4D',
+      isEditable: false,
+      items: (columnItems['checked-out'] ?? checkedOutItems.map(i => i.id))
+        .map(id => equipment.find(i => i.id === id))
+        .filter((i): i is Equipment => Boolean(i)),
+    },
+    ...categories.map(cat => ({
+      id: cat.id,
+      title: cat.name,
+      color: cat.color,
+      isEditable: role === 'super_admin',
+      items: (columnItems[cat.id] ?? equipment
+        .filter(i => i.status !== 'archived' && i.status !== 'checked_out' && getColumnForItem(i) === cat.id)
+        .map(i => i.id))
+        .map(id => equipment.find(i => i.id === id))
+        .filter((i): i is Equipment => Boolean(i)),
+    })),
+  ];
+
   return (
     <>
-      {/* Board area — Trello's scrollable horizontal list container */}
       <div
         style={{
           flex: 1,
@@ -491,39 +685,19 @@ export default function Dashboard({
           background: 'radial-gradient(circle at top right, #A95CC5 0%, #7A4DB8 38%, #344EAD 100%)',
         }}
       >
-        {/* Each "list" is a Trello list container */}
-        {[
-          {
-            id: 'checked-out',
-            title: 'Checked Out',
-            color: '#172B4D',
-            items: (columnItems['checked-out'] ?? checkedOutItems.map(item => item.id))
-              .map(id => equipment.find(item => item.id === id))
-              .filter((item): item is Equipment => Boolean(item)),
-          },
-          ...categories.map(cat => ({
-            id: cat.id,
-            title: cat.name,
-            color: cat.color,
-            items: (columnItems[cat.id] ?? equipment
-              .filter(item => item.status !== 'archived' && item.status !== 'checked_out' && getColumnForItem(item) === cat.id)
-              .map(item => item.id))
-              .map(id => equipment.find(item => item.id === id))
-              .filter((item): item is Equipment => Boolean(item)),
-          })),
-        ].map(col => (
+        {columns.map(col => (
           <div
             key={col.id}
             style={{
               background: '#EEF1F8',
-              borderRadius: '14px',
-              width: '320px',
+              borderRadius: 14,
+              width: 300,
               flexShrink: 0,
               display: 'flex',
               flexDirection: 'column',
-              minHeight: '120px',
+              minHeight: 120,
               height: 'fit-content',
-              boxShadow: '0 10px 24px rgba(17, 31, 67, 0.24)',
+              boxShadow: '0 10px 24px rgba(17,31,67,0.24)',
             }}
           >
             <Column
@@ -533,6 +707,7 @@ export default function Dashboard({
               items={col.items}
               checkouts={checkouts}
               users={users}
+              isEditable={col.isEditable}
               draggingItemId={draggingItemId}
               onDropItem={handleDropItem}
               onAddCard={handleAddCard}
@@ -542,8 +717,7 @@ export default function Dashboard({
               onCheckIn={setCheckInItem}
               onSendReminder={handleReminder}
               onOpenDetails={setDetailItem}
-              role={role}
-              onEditColumn={setEditingColumn}
+              onUpdateColumn={onUpdateCategory}
             />
           </div>
         ))}
@@ -560,15 +734,11 @@ export default function Dashboard({
         />
       )}
 
-      {editingColumn && (
-        <EditColumnModal
-          column={{ id: editingColumn, title: categories.find(c => c.id === editingColumn)?.name || '', color: categories.find(c => c.id === editingColumn)?.color || '' }}
-          categories={categories}
-          onClose={() => setEditingColumn(null)}
-          onConfirm={(id, name, color) => {
-            onUpdateCategory(id, name, color);
-            setEditingColumn(null);
-          }}
+      {checkOutItem && (
+        <CheckOutModal
+          equipment={checkOutItem}
+          onClose={() => setCheckOutItem(null)}
+          onConfirm={handleCheckOut}
         />
       )}
 
