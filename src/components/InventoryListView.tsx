@@ -4,6 +4,8 @@ import DynamicTable from '@atlaskit/dynamic-table';
 import Lozenge from '@atlaskit/lozenge';
 import { Box, Pressable, Text } from '@atlaskit/primitives';
 import type { Category, Checkout, Equipment, User } from '../types';
+import CheckOutModal from './CheckOutModal';
+import CheckInModal from './CheckInModal';
 
 type Props = {
   equipment: Equipment[];
@@ -14,6 +16,9 @@ type Props = {
   statusFilter: 'all' | 'active' | 'available' | 'checked_out' | 'archived';
   onStatusFilterChange: (status: 'all' | 'available' | 'archived') => void;
   role: 'super_admin' | 'manager';
+  onCheckOut: (co: Omit<Checkout, 'id'>) => void;
+  onCheckIn: (checkoutId: string, note: string) => void;
+  onSendReminder: (checkoutId: string) => void;
   onArchive: (id: string, reason: string) => void;
 };
 
@@ -32,10 +37,15 @@ export default function InventoryListView({
   statusFilter,
   onStatusFilterChange,
   role,
+  onCheckOut,
+  onCheckIn,
+  onSendReminder,
   onArchive,
 }: Props) {
   const [sortKey, setSortKey] = React.useState<string>('name');
   const [sortOrder, setSortOrder] = React.useState<'ASC' | 'DESC'>('ASC');
+  const [checkOutItem, setCheckOutItem] = React.useState<Equipment | null>(null);
+  const [checkInItem, setCheckInItem] = React.useState<Equipment | null>(null);
   const normalizedQuery = query.trim().toLowerCase();
 
   const filtered = equipment.filter((item) => {
@@ -68,7 +78,7 @@ export default function InventoryListView({
       { key: 'borrower', content: 'Borrower', width: 16, isSortable: true },
       { key: 'due', content: 'Due', width: 12, isSortable: true },
       { key: 'notes', content: 'Latest note', width: 20, isSortable: true },
-      { key: 'actions', content: '', width: 12 },
+      { key: 'actions', content: 'Actions', width: 20 },
     ],
   };
 
@@ -154,20 +164,52 @@ export default function InventoryListView({
         },
         {
           key: 'actions',
-          content: role === 'super_admin' && item.status !== 'archived' ? (
-            <Button
-              appearance="subtle"
-              spacing="compact"
-              onClick={() => {
-                const reason = window.prompt('Reason for archiving this item');
-                if (reason && reason.trim()) {
-                  onArchive(item.id, reason.trim());
-                }
-              }}
-            >
-              Archive
-            </Button>
-          ) : null,
+          content: (
+            <Box style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              {item.status === 'available' && (
+                <Button appearance="primary" spacing="compact" onClick={() => setCheckOutItem(item)}>
+                  Check out
+                </Button>
+              )}
+
+              {item.status === 'checked_out' && (
+                <>
+                  <Button appearance="default" spacing="compact" onClick={() => setCheckInItem(item)}>
+                    Check in
+                  </Button>
+                  {item.status === 'checked_out' && (
+                    <Button
+                      appearance="subtle"
+                      spacing="compact"
+                      onClick={() => {
+                        const checkout = checkouts.find((entry) => entry.equipmentId === item.id);
+                        if (checkout) {
+                          onSendReminder(checkout.id);
+                        }
+                      }}
+                    >
+                      Remind
+                    </Button>
+                  )}
+                </>
+              )}
+
+              {role === 'super_admin' && item.status !== 'archived' && (
+                <Button
+                  appearance="subtle"
+                  spacing="compact"
+                  onClick={() => {
+                    const reason = window.prompt('Reason for archiving this item');
+                    if (reason && reason.trim()) {
+                      onArchive(item.id, reason.trim());
+                    }
+                  }}
+                >
+                  Archive
+                </Button>
+              )}
+            </Box>
+          ),
         },
       ],
     };
@@ -183,8 +225,12 @@ export default function InventoryListView({
     ? statusFilter
     : 'all';
 
+  const checkInCheckout = checkInItem ? checkouts.find((entry) => entry.equipmentId === checkInItem.id) ?? null : null;
+  const checkInBorrower = checkInCheckout ? users.find((entry) => entry.id === checkInCheckout.userId) : undefined;
+
   return (
-    <Box style={{ padding: 24 }}>
+    <>
+      <Box style={{ padding: 24 }}>
       <Box style={{ display: 'flex', gap: 8, marginBottom: 14, flexWrap: 'wrap' }}>
         {tabItems.map((tab) => {
           const isActive = selectedTab === tab.key;
@@ -243,6 +289,31 @@ export default function InventoryListView({
           setSortOrder(nextSortOrder);
         }}
       />
-    </Box>
+      </Box>
+
+      {checkOutItem && (
+        <CheckOutModal
+          equipment={checkOutItem}
+          onClose={() => setCheckOutItem(null)}
+          onConfirm={(checkout) => {
+            onCheckOut(checkout);
+            setCheckOutItem(null);
+          }}
+        />
+      )}
+
+      {checkInItem && checkInCheckout && (
+        <CheckInModal
+          equipment={checkInItem}
+          checkout={checkInCheckout}
+          borrower={checkInBorrower}
+          onClose={() => setCheckInItem(null)}
+          onConfirm={(note) => {
+            onCheckIn(checkInCheckout.id, note);
+            setCheckInItem(null);
+          }}
+        />
+      )}
+    </>
   );
 }

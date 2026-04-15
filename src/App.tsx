@@ -224,6 +224,9 @@ export default function App() {
                 statusFilter={inventoryStatusFilter}
                 onStatusFilterChange={setInventoryStatusFilter}
                 role={CURRENT_MANAGER.role}
+                onCheckOut={handleCheckOut}
+                onCheckIn={handleCheckIn}
+                onSendReminder={handleSendReminder}
                 onArchive={handleArchive}
               />
             )}
