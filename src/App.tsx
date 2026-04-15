@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { FlagGroup } from '@atlaskit/flag';
 import Flag from '@atlaskit/flag';
-import type { Equipment, Checkout, User, Manager, ActivityEntry } from './types';
+import type { Equipment, Checkout, User, Manager, ActivityEntry, Category } from './types';
 import {
   CATEGORIES,
   EQUIPMENT,
@@ -32,6 +32,7 @@ export default function App() {
   const [users, setUsers] = useState<User[]>(USERS);
   const [managers, setManagers] = useState<Manager[]>(MANAGERS);
   const [activityLog, setActivityLog] = useState<ActivityEntry[]>(ACTIVITY_LOG);
+  const [categories, setCategories] = useState<Category[]>(CATEGORIES);
   const [flags, setFlags] = useState<FlagData[]>([]);
   const [activeView, setActiveView] = useState<AppView>('board');
   const [inventoryQuery, setInventoryQuery] = useState('');
@@ -245,7 +246,7 @@ export default function App() {
               <Dashboard
                 equipment={equipment}
                 checkouts={checkouts}
-                categories={CATEGORIES}
+                categories={categories}
                 users={users}
                 activityLog={activityLog}
                 role={CURRENT_MANAGER.role}
@@ -263,7 +264,7 @@ export default function App() {
             {activeView === 'inventory' && (
               <InventoryListView
                 equipment={equipment}
-                categories={CATEGORIES}
+                categories={categories}
                 checkouts={checkouts}
                 users={users}
                 query={inventoryQuery}
@@ -313,7 +314,7 @@ export default function App() {
               <div className="app-pane">
                 <AuditMode 
                   equipment={equipment}
-                  categories={CATEGORIES}
+                  categories={categories}
                   users={users}
                   currentRole={CURRENT_MANAGER.role}
                 />

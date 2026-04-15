@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import Button, { IconButton } from '@atlaskit/button/new';
 import Avatar from '@atlaskit/avatar';
 import Tooltip from '@atlaskit/tooltip';
-import { Lozenge } from '@atlaskit/lozenge';
+import Lozenge from '@atlaskit/lozenge';
 import Badge from '@atlaskit/badge';
 import { Box, Inline, Text } from '@atlaskit/primitives';
 import AddIcon from '@atlaskit/icon/core/add';
@@ -158,16 +158,28 @@ function EquipmentCard({
             </Inline>
             <Inline space="space.050" alignBlock="center">
               {isCheckedOut ? (
-                <Button
-                  appearance="default"
-                  spacing="compact"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onCheckIn();
-                  }}
-                >
-                  Return
-                </Button>
+                <>
+                  <Button
+                    appearance="default"
+                    spacing="compact"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onCheckIn();
+                    }}
+                  >
+                    Return
+                  </Button>
+                  <Button
+                    appearance="warning"
+                    spacing="compact"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onSendReminder();
+                    }}
+                  >
+                    Remind
+                  </Button>
+                </>
               ) : (
                 <Button
                   appearance="primary"
@@ -179,68 +191,9 @@ function EquipmentCard({
                 >
                   Check Out
                 </Button>
-              </>
-            )}
+              )}
+            </Inline>
           </Inline>
-        </Inline>
-      </Box>
-    </div>
-  );
-        </Box>
-
-        <Inline space="space.100" alignBlock="center" spread="space-between">
-          <Inline space="space.050" alignBlock="center">
-            {borrower && (
-              <Tooltip content={borrower.fullName}>
-                <Avatar size="small" name={borrower.fullName} />
-              </Tooltip>
-            )}
-            {borrower && (
-              <Box style={{ color: '#5E6C84', maxWidth: 132 }}>
-                <Text as="span" size="small" color="inherit">
-                  {borrower.fullName}
-                </Text>
-              </Box>
-            )}
-          </Inline>
-          <Inline space="space.050" alignBlock="center">
-            {isCheckedOut ? (
-              <>
-                <Button
-                  appearance="default"
-                  spacing="compact"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onCheckIn();
-                  }}
-                >
-                  Return
-                </Button>
-                <Button
-                  appearance="warning"
-                  spacing="compact"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onSendReminder();
-                  }}
-                >
-                  Remind
-                </Button>
-              </>
-            ) : (
-              <Button
-                appearance="primary"
-                spacing="compact"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onCheckOut();
-                }}
-              >
-                Check Out
-              </Button>
-            )}
-          </Inline>
-        </Inline>
         </Box>
       </Box>
     </div>
@@ -264,6 +217,8 @@ type ColumnProps = {
   onCheckIn: (item: Equipment) => void;
   onSendReminder: (item: Equipment) => void;
   onOpenDetails: (item: Equipment) => void;
+  role?: string;
+  onEditColumn?: (columnId: string) => void;
 };
 
 function Column({
@@ -283,11 +238,13 @@ function Column({
   onSendReminder,
   onOpenDetails,
   role,
+  onEditColumn,
 }: ColumnProps) {
   const colRef = useRef<HTMLDivElement>(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const MoreH = resolveAtlaskitIcon(ShowMoreHorizontalIcon);
   const Add = resolveAtlaskitIcon(AddIcon);
+  const Edit = resolveAtlaskitIcon(EditIcon);
 
   const overdueInCol = items.filter(item => checkouts.find(c => c.equipmentId === item.id)?.isOverdue).length;
 
@@ -310,10 +267,10 @@ function Column({
               <Badge>{items.length}</Badge>
               <Box style={{ display: 'flex', gap: 4 }}>
                 {role === 'super_admin' && (
-                  <IconButton 
-                    appearance="subtle" 
+                  <IconButton
+                    appearance="subtle"
                     icon={Edit}
-                    onClick={() => setEditingColumn(id)}
+                    onClick={() => onEditColumn?.(id)}
                     label="Edit column"
                   />
                 )}
@@ -410,7 +367,6 @@ export default function Dashboard({
   const [draggingItemId, setDraggingItemId] = useState<string | null>(null);
   const [itemColumnOverrides, setItemColumnOverrides] = useState<Record<string, string>>({});
   const [columnItems, setColumnItems] = useState<Record<string, string[]>>({});
-  const [editingColumn, setEditingColumn] = useState<string | null>(null);
   const [editingColumn, setEditingColumn] = useState<string | null>(null);
 
   const checkedOutItems = equipment.filter(e => e.status === 'checked_out');
@@ -586,6 +542,8 @@ export default function Dashboard({
               onCheckIn={setCheckInItem}
               onSendReminder={handleReminder}
               onOpenDetails={setDetailItem}
+              role={role}
+              onEditColumn={setEditingColumn}
             />
           </div>
         ))}
@@ -593,16 +551,12 @@ export default function Dashboard({
 
       {detailItem && (
         <CardDetailModal
-          item={detailItem}
-          checkout={checkouts.find(c => c.equipmentId === detailItem.id)}
-          borrower={users.find(u => u.id === checkouts.find(c => c.equipmentId === detailItem.id)?.userId)}
+          equipment={detailItem}
+          checkouts={checkouts}
+          users={users}
+          activityLog={activityLog}
           onClose={() => setDetailItem(null)}
-          onCheckOut={onCheckOut}
-          onCheckIn={onCheckIn}
-          onSendReminder={onSendReminder}
-          onAddActivity={onAddActivity}
           onAddGeneralNote={onAddGeneralNote}
-          onEditItem={onEditItem}
         />
       )}
 
@@ -617,11 +571,8 @@ export default function Dashboard({
           }}
         />
       )}
-    </>
-  );
-}
 
-{checkInItem && checkInCheckout && (
+      {checkInItem && checkInCheckout && (
         <CheckInModal
           equipment={checkInItem}
           checkout={checkInCheckout}
