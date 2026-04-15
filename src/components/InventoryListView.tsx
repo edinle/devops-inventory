@@ -1,11 +1,18 @@
 import React from 'react';
-import Button from '@atlaskit/button/new';
+import Button, { IconButton } from '@atlaskit/button/new';
 import DynamicTable from '@atlaskit/dynamic-table';
 import Lozenge from '@atlaskit/lozenge';
 import { Box, Pressable, Text } from '@atlaskit/primitives';
 import Modal, { ModalBody, ModalFooter, ModalHeader, ModalTitle } from '@atlaskit/modal-dialog';
 import TextField from '@atlaskit/textfield';
 import Select from '@atlaskit/select';
+import Tooltip from '@atlaskit/tooltip';
+import AddIcon from '@atlaskit/icon/core/add';
+import CheckCircleIcon from '@atlaskit/icon/core/check-circle';
+import EditIcon from '@atlaskit/icon/core/edit';
+import CrossIcon from '@atlaskit/icon/core/cross';
+import EmailIcon from '@atlaskit/icon/core/email';
+import { resolveAtlaskitIcon } from '../utils/resolveAtlaskitIcon';
 import type { Category, Checkout, Equipment, User } from '../types';
 import CheckOutModal from './CheckOutModal';
 import CheckInModal from './CheckInModal';
@@ -146,7 +153,7 @@ export default function InventoryListView({
       { key: 'borrower', content: 'Borrower', width: 16, isSortable: true },
       { key: 'due', content: 'Due', width: 12, isSortable: true },
       { key: 'notes', content: 'Latest note', width: 20, isSortable: true },
-      { key: 'actions', content: 'Actions', width: 20 },
+      { key: 'actions', content: 'Actions', width: 12 },
     ],
   };
 
@@ -233,60 +240,78 @@ export default function InventoryListView({
         {
           key: 'actions',
           content: (
-            <Box style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+            <Box style={{ display: 'flex', gap: 4, alignItems: 'center', justifyContent: 'flex-start' }}>
               {/* Check Out — only for available items */}
               {item.status === 'available' && (
-                <Button appearance="primary" spacing="compact" onClick={() => setCheckOutItem(item)}>
-                  Check Out
-                </Button>
+                <Tooltip content="Check Out">
+                  <IconButton 
+                    appearance="primary" 
+                    spacing="compact" 
+                    onClick={() => setCheckOutItem(item)}
+                    icon={resolveAtlaskitIcon(AddIcon)}
+                    label="Check Out"
+                  />
+                </Tooltip>
               )}
 
               {/* Check In + Remind — only for checked-out items */}
               {item.status === 'checked_out' && (
                 <>
-                  <Button appearance="default" spacing="compact" onClick={() => setCheckInItem(item)}>
-                    Check In
-                  </Button>
-                  <Button
-                    appearance="subtle"
-                    spacing="compact"
-                    onClick={() => {
-                      const checkout = checkouts.find((entry) => entry.equipmentId === item.id);
-                      if (checkout) {
-                        onSendReminder(checkout.id);
-                      }
-                    }}
-                  >
-                    Remind
-                  </Button>
+                  <Tooltip content="Check In">
+                    <IconButton 
+                      appearance="default" 
+                      spacing="compact" 
+                      onClick={() => setCheckInItem(item)}
+                      icon={resolveAtlaskitIcon(CheckCircleIcon)}
+                      label="Check In"
+                    />
+                  </Tooltip>
+                  <Tooltip content="Send Reminder">
+                    <IconButton 
+                      appearance="subtle" 
+                      spacing="compact"
+                      onClick={() => {
+                        const checkout = checkouts.find((entry) => entry.equipmentId === item.id);
+                        if (checkout) {
+                          onSendReminder(checkout.id);
+                        }
+                      }}
+                      icon={resolveAtlaskitIcon(EmailIcon)}
+                      label="Send Reminder"
+                    />
+                  </Tooltip>
                 </>
               )}
 
               {/* Edit — available to all roles, not on archived items */}
               {item.status !== 'archived' && (
-                <Button
-                  appearance="subtle"
-                  spacing="compact"
-                  onClick={() => setEditItem(item)}
-                >
-                  Edit
-                </Button>
+                <Tooltip content="Edit Item">
+                  <IconButton
+                    appearance="subtle"
+                    spacing="compact"
+                    onClick={() => setEditItem(item)}
+                    icon={resolveAtlaskitIcon(EditIcon)}
+                    label="Edit Item"
+                  />
+                </Tooltip>
               )}
 
               {/* Archive — super_admin only, not on already-archived items */}
               {role === 'super_admin' && item.status !== 'archived' && (
-                <Button
-                  appearance="subtle"
-                  spacing="compact"
-                  onClick={() => {
-                    const reason = window.prompt('Reason for archiving this item');
-                    if (reason && reason.trim()) {
-                      onArchive(item.id, reason.trim());
-                    }
-                  }}
-                >
-                  Archive
-                </Button>
+                <Tooltip content="Archive Item">
+                  <IconButton
+                    appearance="subtle"
+                    spacing="compact"
+                    onClick={() => {
+                      const reason = window.prompt('Reason for archiving this item');
+                      if (reason && reason.trim()) {
+                        onArchive(item.id, reason.trim());
+                      }
+                    }}
+                    icon={resolveAtlaskitIcon(CrossIcon)}
+                    label="Archive Item"
+                  />
+                </Tooltip>
               )}
             </Box>
           ),
