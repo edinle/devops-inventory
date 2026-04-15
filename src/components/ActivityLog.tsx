@@ -1,6 +1,8 @@
 import React from 'react';
 import DynamicTable from '@atlaskit/dynamic-table';
 import Lozenge from '@atlaskit/lozenge';
+import Badge from '@atlaskit/badge';
+import { Box, Flex, Stack, Text } from '@atlaskit/primitives';
 import type { ActivityEntry, Equipment, User } from '../types';
 
 type Props = {
@@ -43,18 +45,33 @@ export default function ActivityLog({ log, equipment, users }: Props) {
           {
             key: 'timestamp',
             content: (
-              <span style={{ fontSize: '12px', color: '#5E6C84' }}>
-                {new Date(entry.timestamp).toLocaleString('en-US', {
-                  month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit',
-                })}
-              </span>
+              <Box style={{ color: '#5E6C84' }}>
+                <Text size="small" color="inherit">
+                  {new Date(entry.timestamp).toLocaleString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    hour: 'numeric',
+                    minute: '2-digit',
+                  })}
+                </Text>
+              </Box>
             ),
           },
           {
             key: 'item',
             content: item
-              ? <span style={{ fontWeight: 500 }}>{item.name} {item.tagNumber}</span>
-              : <span style={{ color: '#97A0AF' }}>—</span>,
+              ? (
+                <Text weight="medium" color="inherit">
+                  {item.name} {item.tagNumber}
+                </Text>
+              )
+              : (
+                <Box style={{ color: '#97A0AF' }}>
+                  <Text size="small" color="inherit">
+                    —
+                  </Text>
+                </Box>
+              ),
           },
           {
             key: 'action',
@@ -63,43 +80,66 @@ export default function ActivityLog({ log, equipment, users }: Props) {
           {
             key: 'user',
             content: user
-              ? <span>{user.fullName}</span>
-              : <span style={{ color: '#97A0AF' }}>—</span>,
+              ? <Text color="inherit">{user.fullName}</Text>
+              : (
+                <Box style={{ color: '#97A0AF' }}>
+                  <Text size="small" color="inherit">
+                    —
+                  </Text>
+                </Box>
+              ),
           },
           {
             key: 'actor',
-            content: <span style={{ color: '#5E6C84' }}>{entry.actorName}</span>,
+            content: (
+              <Box style={{ color: '#5E6C84' }}>
+                <Text size="small" color="inherit">
+                  {entry.actorName}
+                </Text>
+              </Box>
+            ),
           },
           {
             key: 'note',
             content: entry.note
-              ? <span style={{ fontStyle: 'italic', fontSize: '12px', color: '#5E6C84' }}>{entry.note}</span>
-              : <span style={{ color: '#97A0AF' }}>—</span>,
+              ? (
+                <Box style={{ color: '#5E6C84' }}>
+                  <Text as="em" size="small" color="inherit">
+                    {entry.note}
+                  </Text>
+                </Box>
+              )
+              : (
+                <Box style={{ color: '#97A0AF' }}>
+                  <Text size="small" color="inherit">
+                    —
+                  </Text>
+                </Box>
+              ),
           },
         ],
       };
     });
 
   return (
-    <div>
-      <div style={{ marginBottom: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div>
-          <h3 style={{ margin: 0, color: '#172B4D' }}>Activity Log</h3>
-          <p style={{ margin: '4px 0 0', color: '#5E6C84', fontSize: '13px' }}>
-            Read-only audit trail of all equipment events. Retained for minimum 3 years.
-          </p>
-        </div>
-        <span style={{
-          background: '#DEEBFF',
-          color: '#0052CC',
-          padding: '4px 10px',
-          borderRadius: '4px',
-          fontSize: '12px',
-          fontWeight: 500,
-        }}>
-          {log.length} entries
-        </span>
-      </div>
+    <Box>
+      <Box style={{ marginBottom: 12 }}>
+        <Flex gap="space.200" alignItems="center" justifyContent="space-between">
+          <Stack space="space.050">
+            <Box style={{ color: '#172B4D' }}>
+              <Text as="strong" weight="semibold" size="large" color="inherit">
+                Activity Log
+              </Text>
+            </Box>
+            <Box style={{ color: '#5E6C84' }}>
+              <Text size="small" color="inherit">
+                Read-only audit trail of all equipment events. Retained for minimum 3 years.
+              </Text>
+            </Box>
+          </Stack>
+          <Badge appearance="primary">{log.length} entries</Badge>
+        </Flex>
+      </Box>
       <DynamicTable
         head={head}
         rows={rows}
@@ -109,6 +149,6 @@ export default function ActivityLog({ log, equipment, users }: Props) {
         defaultSortKey="timestamp"
         defaultSortOrder="DESC"
       />
-    </div>
+    </Box>
   );
 }

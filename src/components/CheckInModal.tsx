@@ -5,6 +5,7 @@ import Form, { Field } from '@atlaskit/form';
 import TextArea from '@atlaskit/textarea';
 import Lozenge from '@atlaskit/lozenge';
 import SectionMessage from '@atlaskit/section-message';
+import { Box, Stack, Text } from '@atlaskit/primitives';
 import type { Equipment, Checkout, User } from '../types';
 
 type Props = {
@@ -29,31 +30,47 @@ export default function CheckInModal({ equipment, checkout, borrower, onClose, o
         <ModalTitle>Check In Equipment</ModalTitle>
       </ModalHeader>
       <ModalBody>
-        <div style={{ marginBottom: '16px' }}>
-          <strong>Item:</strong>{' '}
-          {equipment.name} {equipment.tagNumber}
-          {'  '}
-          {checkout.isOverdue
-            ? <Lozenge appearance="removed">Overdue</Lozenge>
-            : <Lozenge appearance="success">On Time</Lozenge>}
-        </div>
+        <Box style={{ marginBottom: 16 }}>
+          <Stack space="space.100">
+            <Text as="strong" weight="semibold" color="inherit">
+              Item
+            </Text>
+            <Box style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <Text color="inherit">
+                {equipment.name} {equipment.tagNumber}
+              </Text>
+              {checkout.isOverdue ? <Lozenge appearance="removed">Overdue</Lozenge> : <Lozenge appearance="success">On Time</Lozenge>}
+            </Box>
+          </Stack>
+        </Box>
 
         {checkout.isOverdue && (
-          <div style={{ marginBottom: '16px' }}>
+          <Box style={{ marginBottom: 16 }}>
             <SectionMessage appearance="error" title="Item is overdue">
               This item was due on {formattedDue}. Please note the return condition carefully.
             </SectionMessage>
-          </div>
+          </Box>
         )}
 
-        <div style={{ marginBottom: '12px', padding: '12px', background: '#F4F5F7', borderRadius: '4px' }}>
-          <div><strong>Borrower:</strong> {borrower?.fullName ?? 'Unknown'}</div>
-          <div><strong>Checked out:</strong> {new Date(checkout.checkedOutAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</div>
-          <div><strong>Was due:</strong> {formattedDue}</div>
-          {checkout.conditionNoteOut && (
-            <div><strong>Out condition note:</strong> {checkout.conditionNoteOut}</div>
-          )}
-        </div>
+        <Box style={{ marginBottom: 12, padding: 12, background: '#F4F5F7', borderRadius: 8 }}>
+          <Stack space="space.050">
+            <Text size="small" color="inherit">
+              <strong>Borrower:</strong> {borrower?.fullName ?? 'Unknown'}
+            </Text>
+            <Text size="small" color="inherit">
+              <strong>Checked out:</strong>{' '}
+              {new Date(checkout.checkedOutAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+            </Text>
+            <Text size="small" color="inherit">
+              <strong>Was due:</strong> {formattedDue}
+            </Text>
+            {checkout.conditionNoteOut && (
+              <Text size="small" color="inherit">
+                <strong>Out condition note:</strong> {checkout.conditionNoteOut}
+              </Text>
+            )}
+          </Stack>
+        </Box>
 
         <Form onSubmit={() => onConfirm(returnNote)}>
           {({ formProps }) => (

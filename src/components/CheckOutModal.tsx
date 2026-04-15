@@ -6,6 +6,7 @@ import Select from '@atlaskit/select';
 import TextArea from '@atlaskit/textarea';
 import { DatePicker } from '@atlaskit/datetime-picker';
 import Lozenge from '@atlaskit/lozenge';
+import { Box, Inline, Text } from '@atlaskit/primitives';
 import type { Equipment, User, Checkout } from '../types';
 import { USERS } from '../data/mockData';
 
@@ -52,12 +53,17 @@ export default function CheckOutModal({ equipment, onClose, onConfirm }: Props) 
         <ModalTitle>Check Out Equipment</ModalTitle>
       </ModalHeader>
       <ModalBody>
-        <div style={{ marginBottom: '12px' }}>
-          <strong>Item:</strong>{' '}
-          {equipment.name} {equipment.tagNumber}
-          {'  '}
-          <Lozenge appearance="inprogress">Checking Out</Lozenge>
-        </div>
+        <Box style={{ marginBottom: 12 }}>
+          <Inline space="space.100" alignBlock="center">
+            <Text as="strong" weight="semibold" color="inherit">
+              Item:
+            </Text>
+            <Text color="inherit">
+              {equipment.name} {equipment.tagNumber}
+            </Text>
+            <Lozenge appearance="inprogress">Checking Out</Lozenge>
+          </Inline>
+        </Box>
 
         <Form onSubmit={handleSubmit}>
           {({ formProps }) => (
