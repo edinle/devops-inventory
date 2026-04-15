@@ -2,7 +2,7 @@ import React from 'react';
 import Button from '@atlaskit/button/new';
 import DynamicTable from '@atlaskit/dynamic-table';
 import Lozenge from '@atlaskit/lozenge';
-import { Box, Text } from '@atlaskit/primitives';
+import { Box, Pressable, Text } from '@atlaskit/primitives';
 import type { Category, Checkout, Equipment, User } from '../types';
 
 type Props = {
@@ -12,6 +12,7 @@ type Props = {
   users: User[];
   query: string;
   statusFilter: 'all' | 'active' | 'available' | 'checked_out' | 'archived';
+  onStatusFilterChange: (status: 'all' | 'available' | 'archived') => void;
   role: 'super_admin' | 'manager';
   onArchive: (id: string, reason: string) => void;
 };
@@ -29,6 +30,7 @@ export default function InventoryListView({
   users,
   query,
   statusFilter,
+  onStatusFilterChange,
   role,
   onArchive,
 }: Props) {
@@ -127,8 +129,58 @@ export default function InventoryListView({
     };
   });
 
+  const tabItems: Array<{ key: 'all' | 'available' | 'archived'; label: string; count: number }> = [
+    { key: 'all', label: 'All', count: equipment.length },
+    { key: 'available', label: 'Available', count: equipment.filter((item) => item.status === 'available').length },
+    { key: 'archived', label: 'Archived', count: equipment.filter((item) => item.status === 'archived').length },
+  ];
+
+  const selectedTab: 'all' | 'available' | 'archived' = statusFilter === 'available' || statusFilter === 'archived'
+    ? statusFilter
+    : 'all';
+
   return (
     <Box style={{ padding: 24 }}>
+      <Box style={{ display: 'flex', gap: 8, marginBottom: 14, flexWrap: 'wrap' }}>
+        {tabItems.map((tab) => {
+          const isActive = selectedTab === tab.key;
+          return (
+            <Pressable
+              key={tab.key}
+              onClick={() => onStatusFilterChange(tab.key)}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 8,
+                borderRadius: 999,
+                border: `1px solid ${isActive ? '#0C66E4' : '#DFE1E6'}`,
+                background: isActive ? '#E9F2FF' : '#FFFFFF',
+                color: isActive ? '#0C66E4' : '#42526E',
+                padding: '6px 12px',
+              }}
+            >
+              <Text as="span" size="small" weight="medium" color="inherit">
+                {tab.label}
+              </Text>
+              <Box
+                style={{
+                  minWidth: 20,
+                  padding: '0 6px',
+                  borderRadius: 999,
+                  background: isActive ? '#0C66E4' : '#F1F2F4',
+                  color: isActive ? '#FFFFFF' : '#42526E',
+                  textAlign: 'center',
+                }}
+              >
+                <Text as="span" size="small" weight="medium" color="inherit">
+                  {tab.count}
+                </Text>
+              </Box>
+            </Pressable>
+          );
+        })}
+      </Box>
+
       <DynamicTable head={head} rows={rows} rowsPerPage={12} defaultPage={1} isFixedSize />
     </Box>
   );

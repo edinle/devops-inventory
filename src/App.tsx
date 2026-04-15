@@ -33,7 +33,7 @@ export default function App() {
   const [flags, setFlags] = useState<FlagData[]>([]);
   const [activeView, setActiveView] = useState<AppView>('board');
   const [inventoryQuery, setInventoryQuery] = useState('');
-  const [inventoryStatusFilter, setInventoryStatusFilter] = useState<'all' | 'active' | 'available' | 'checked_out' | 'archived'>('active');
+  const [inventoryStatusFilter, setInventoryStatusFilter] = useState<'all' | 'active' | 'available' | 'checked_out' | 'archived'>('all');
 
   function addFlag(f: Omit<FlagData, 'id'>) {
     const id = Date.now().toString();
@@ -222,6 +222,7 @@ export default function App() {
                 users={users}
                 query={inventoryQuery}
                 statusFilter={inventoryStatusFilter}
+                onStatusFilterChange={setInventoryStatusFilter}
                 role={CURRENT_MANAGER.role}
                 onArchive={handleArchive}
               />
