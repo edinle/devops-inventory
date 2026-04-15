@@ -8,6 +8,7 @@ import type { Category } from '../types';
 
 type Props = {
   categories: Category[];
+  defaultCategoryId?: string;
   onClose: () => void;
   onConfirm: (item: {
     name: string;
@@ -17,10 +18,10 @@ type Props = {
   }) => void;
 };
 
-function AddItemModal({ categories, onClose, onConfirm }: Props) {
+function AddItemModal({ categories, defaultCategoryId, onClose, onConfirm }: Props) {
   const [name, setName] = React.useState('');
   const [tagNumber, setTagNumber] = React.useState('');
-  const [categoryId, setCategoryId] = React.useState('');
+  const [categoryId, setCategoryId] = React.useState(defaultCategoryId ?? '');
   const [conditionNotes, setConditionNotes] = React.useState('');
 
   const categoryOptions = categories.map((c) => ({ label: c.name, value: c.id }));

@@ -1,12 +1,12 @@
 import type { Category, Equipment, User, Manager, ActivityEntry, Checkout } from '../types';
 
 export const CATEGORIES: Category[] = [
-  { id: 'cat-cameras', name: 'Cameras', color: '#0052CC' },
-  { id: 'cat-lenses', name: 'Lenses', color: '#6554C0' },
-  { id: 'cat-projectors', name: 'Projectors', color: '#00875A' },
-  { id: 'cat-recorders', name: 'Recorders', color: '#FF8B00' },
-  { id: 'cat-lighting', name: 'Lighting', color: '#DE350B' },
-  { id: 'cat-audio', name: 'Audio', color: '#0065FF' },
+  { id: 'cat-cameras',    name: 'Cameras',    color: '#0052CC', bgColor: '#EAF0FF' },
+  { id: 'cat-lenses',     name: 'Lenses',     color: '#6554C0', bgColor: '#F0EEFF' },
+  { id: 'cat-projectors', name: 'Projectors', color: '#00875A', bgColor: '#E6F9F0' },
+  { id: 'cat-recorders',  name: 'Recorders',  color: '#FF8B00', bgColor: '#FFF4E5' },
+  { id: 'cat-lighting',   name: 'Lighting',   color: '#DE350B', bgColor: '#FFF0EC' },
+  { id: 'cat-audio',      name: 'Audio',      color: '#0065FF', bgColor: '#E8F4FD' },
 ];
 
 export const EQUIPMENT: Equipment[] = [

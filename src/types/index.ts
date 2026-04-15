@@ -5,7 +5,8 @@ export type EquipmentStatus = 'available' | 'checked_out' | 'archived';
 export type Category = {
   id: string;
   name: string;
-  color: string; // hex color for column header
+  color: string;   // hex accent color (dot + card left bar)
+  bgColor: string; // hex background color for the column
 };
 
 export type Equipment = {

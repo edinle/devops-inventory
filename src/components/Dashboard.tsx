@@ -14,6 +14,7 @@ import type { Equipment, Checkout, Category, User, ActivityEntry } from '../type
 import CheckOutModal from './CheckOutModal';
 import CheckInModal from './CheckInModal';
 import CardDetailModal from './CardDetailModal';
+import AddItemModal from './AddItemModal';
 
 type Props = {
   equipment: Equipment[];
@@ -29,7 +30,7 @@ type Props = {
   onAddActivity: (entry: Omit<ActivityEntry, 'id'>) => void;
   onAddGeneralNote: (equipmentId: string, note: string) => void;
   onEditItem: (id: string, name: string, categoryId: string) => void;
-  onUpdateCategory: (id: string, name: string, color: string) => void;
+  onUpdateCategory: (id: string, name: string, color: string, bgColor?: string) => void;
 };
 
 // Left-accent label colors
@@ -37,12 +38,30 @@ const LABEL_OVERDUE     = '#FF5630';
 const LABEL_CHECKED_OUT = '#36B37E';
 const LABEL_AVAILABLE   = '#DFE1E6';
 
-// Colour palette shown in the column header picker
-const COLOR_PALETTE = [
+// Accent / dot colour palette
+const ACCENT_PALETTE = [
   '#0052CC', '#1868DB', '#00875A', '#36B37E',
   '#FF991F', '#FFAB00', '#FF5630', '#DE350B',
   '#6554C0', '#8777D9', '#00B8D9', '#00A3BF',
   '#6B7780', '#172B4D',
+];
+
+// Background colour palette — light, column-friendly tones
+const BG_PALETTE = [
+  '#EEF1F8', // default blue-gray
+  '#EAF0FF', // periwinkle
+  '#E8F4FD', // sky blue
+  '#E6F9F0', // mint
+  '#F0EEFF', // lavender
+  '#FFF4E5', // warm cream
+  '#FFF0EC', // salmon blush
+  '#FFF8E6', // butter yellow
+  '#F5F5F5', // light gray
+  '#FFFFFF', // white
+  '#FFFBF0', // ivory
+  '#F9EFF9', // pink mist
+  '#E6FAF8', // teal blush
+  '#EDF5EC', // sage
 ];
 
 // ─── Card ────────────────────────────────────────────────────────────────────
@@ -74,8 +93,7 @@ function EquipmentCard({
 }: CardProps) {
   const isCheckedOut = item.status === 'checked_out';
   const isOverdue    = checkout?.isOverdue ?? false;
-
-  const accentColor = isOverdue ? LABEL_OVERDUE : isCheckedOut ? LABEL_CHECKED_OUT : LABEL_AVAILABLE;
+  const accentColor  = isOverdue ? LABEL_OVERDUE : isCheckedOut ? LABEL_CHECKED_OUT : LABEL_AVAILABLE;
 
   return (
     <div
@@ -109,9 +127,9 @@ function EquipmentCard({
         <Box style={{ width: 5, background: accentColor, flexShrink: 0 }} />
 
         {/* Card body */}
-        <Box style={{ padding: '12px 14px 12px', flex: 1, minWidth: 0 }}>
+        <Box style={{ padding: '12px 14px', flex: 1, minWidth: 0 }}>
 
-          {/* ── Name row ── */}
+          {/* Name + overdue lozenge */}
           <Box style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8, marginBottom: 4 }}>
             <Text as="strong" weight="semibold" size="medium" color="color.text">
               {item.name}
@@ -123,14 +141,12 @@ function EquipmentCard({
             )}
           </Box>
 
-          {/* ── Tag number ── */}
+          {/* Tag number */}
           <Box style={{ marginBottom: 10 }}>
-            <Text size="small" color="color.text.subtlest">
-              {item.tagNumber}
-            </Text>
+            <Text size="small" color="color.text.subtlest">{item.tagNumber}</Text>
           </Box>
 
-          {/* ── Condition note ── */}
+          {/* Condition note */}
           {item.conditionNotes.length > 0 && (
             <Box
               style={{
@@ -147,17 +163,8 @@ function EquipmentCard({
             </Box>
           )}
 
-          {/* ── Bottom row: borrower + actions ── */}
-          <Box
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: 8,
-              marginTop: 4,
-            }}
-          >
-            {/* Borrower avatar + name */}
+          {/* Borrower + actions */}
+          <Box style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginTop: 4 }}>
             <Box style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
               {borrower ? (
                 <>
@@ -165,12 +172,7 @@ function EquipmentCard({
                     <Avatar size="small" name={borrower.fullName} />
                   </Tooltip>
                   <Box style={{ minWidth: 0 }}>
-                    <Text
-                      size="small"
-                      color="color.text.subtle"
-                    >
-                      {borrower.fullName}
-                    </Text>
+                    <Text size="small" color="color.text.subtle">{borrower.fullName}</Text>
                   </Box>
                 </>
               ) : (
@@ -178,31 +180,21 @@ function EquipmentCard({
               )}
             </Box>
 
-            {/* Action buttons */}
             <Box style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
               {isCheckedOut ? (
                 <>
-                  <Button
-                    appearance="default"
-                    spacing="compact"
-                    onClick={(e) => { e.stopPropagation(); onCheckIn(); }}
-                  >
+                  <Button appearance="default" spacing="compact"
+                    onClick={(e) => { e.stopPropagation(); onCheckIn(); }}>
                     Return
                   </Button>
-                  <Button
-                    appearance="warning"
-                    spacing="compact"
-                    onClick={(e) => { e.stopPropagation(); onSendReminder(); }}
-                  >
+                  <Button appearance="warning" spacing="compact"
+                    onClick={(e) => { e.stopPropagation(); onSendReminder(); }}>
                     Remind
                   </Button>
                 </>
               ) : (
-                <Button
-                  appearance="primary"
-                  spacing="compact"
-                  onClick={(e) => { e.stopPropagation(); onCheckOut(); }}
-                >
+                <Button appearance="primary" spacing="compact"
+                  onClick={(e) => { e.stopPropagation(); onCheckOut(); }}>
                   Check Out
                 </Button>
               )}
@@ -220,6 +212,7 @@ type ColumnProps = {
   id: string;
   title: string;
   color: string;
+  bgColor: string;
   items: Equipment[];
   checkouts: Checkout[];
   users: User[];
@@ -233,13 +226,14 @@ type ColumnProps = {
   onCheckIn: (item: Equipment) => void;
   onSendReminder: (item: Equipment) => void;
   onOpenDetails: (item: Equipment) => void;
-  onUpdateColumn?: (id: string, name: string, color: string) => void;
+  onUpdateColumn?: (id: string, name: string, color: string, bgColor: string) => void;
 };
 
 function Column({
   id,
   title,
   color,
+  bgColor,
   items,
   checkouts,
   users,
@@ -255,109 +249,121 @@ function Column({
   onOpenDetails,
   onUpdateColumn,
 }: ColumnProps) {
-  const colRef          = useRef<HTMLDivElement>(null);
-  const nameInputRef    = useRef<HTMLInputElement>(null);
-  const colorPickerRef  = useRef<HTMLDivElement>(null);
+  const colRef           = useRef<HTMLDivElement>(null);
+  const nameInputRef     = useRef<HTMLInputElement>(null);
+  const accentPickerRef  = useRef<HTMLDivElement>(null);
+  const bgPickerRef      = useRef<HTMLDivElement>(null);
 
-  const [isDragOver,      setIsDragOver]      = useState(false);
-  const [isEditingName,   setIsEditingName]   = useState(false);
-  const [draftName,       setDraftName]       = useState(title);
-  const [showColorPicker, setShowColorPicker] = useState(false);
-  const [draftColor,      setDraftColor]      = useState(color);
+  const [isDragOver,         setIsDragOver]         = useState(false);
+  const [isEditingName,      setIsEditingName]       = useState(false);
+  const [draftName,          setDraftName]           = useState(title);
+  const [showAccentPicker,   setShowAccentPicker]    = useState(false);
+  const [showBgPicker,       setShowBgPicker]        = useState(false);
+  const [draftColor,         setDraftColor]          = useState(color);
+  const [draftBgColor,       setDraftBgColor]        = useState(bgColor);
 
-  const MoreH   = resolveAtlaskitIcon(ShowMoreHorizontalIcon);
-  const Check   = resolveAtlaskitIcon(CheckMarkIcon);
-  const Cross   = resolveAtlaskitIcon(CrossIcon);
-  const Add     = resolveAtlaskitIcon(AddIcon);
+  const MoreH = resolveAtlaskitIcon(ShowMoreHorizontalIcon);
+  const Check = resolveAtlaskitIcon(CheckMarkIcon);
+  const Cross = resolveAtlaskitIcon(CrossIcon);
+  const Add   = resolveAtlaskitIcon(AddIcon);
 
   const overdueInCol = items.filter(item =>
     checkouts.find(c => c.equipmentId === item.id)?.isOverdue
   ).length;
 
-  // Sync if parent title/color changes
-  useEffect(() => { setDraftName(title); }, [title]);
-  useEffect(() => { setDraftColor(color); }, [color]);
+  useEffect(() => { setDraftName(title); },   [title]);
+  useEffect(() => { setDraftColor(color); },  [color]);
+  useEffect(() => { setDraftBgColor(bgColor); }, [bgColor]);
 
-  // Focus input when entering edit mode
   useEffect(() => {
     if (isEditingName) nameInputRef.current?.select();
   }, [isEditingName]);
 
-  // Close color picker on outside click
+  // Close pickers on outside click
   useEffect(() => {
-    if (!showColorPicker) return;
-    function handleClick(e: MouseEvent) {
-      if (colorPickerRef.current && !colorPickerRef.current.contains(e.target as Node)) {
-        setShowColorPicker(false);
-      }
+    if (!showAccentPicker && !showBgPicker) return;
+    function handle(e: MouseEvent) {
+      if (showAccentPicker && accentPickerRef.current && !accentPickerRef.current.contains(e.target as Node))
+        setShowAccentPicker(false);
+      if (showBgPicker && bgPickerRef.current && !bgPickerRef.current.contains(e.target as Node))
+        setShowBgPicker(false);
     }
-    document.addEventListener('mousedown', handleClick);
-    return () => document.removeEventListener('mousedown', handleClick);
-  }, [showColorPicker]);
+    document.addEventListener('mousedown', handle);
+    return () => document.removeEventListener('mousedown', handle);
+  }, [showAccentPicker, showBgPicker]);
 
   function commitName() {
     const trimmed = draftName.trim();
     if (trimmed && trimmed !== title) {
-      onUpdateColumn?.(id, trimmed, draftColor);
+      onUpdateColumn?.(id, trimmed, draftColor, draftBgColor);
     } else {
       setDraftName(title);
     }
     setIsEditingName(false);
   }
 
-  function commitColor(c: string) {
+  function commitAccentColor(c: string) {
     setDraftColor(c);
-    setShowColorPicker(false);
-    onUpdateColumn?.(id, draftName.trim() || title, c);
+    setShowAccentPicker(false);
+    onUpdateColumn?.(id, draftName.trim() || title, c, draftBgColor);
+  }
+
+  function commitBgColor(c: string) {
+    setDraftBgColor(c);
+    setShowBgPicker(false);
+    onUpdateColumn?.(id, draftName.trim() || title, draftColor, c);
   }
 
   function handleNameKeyDown(e: React.KeyboardEvent) {
-    if (e.key === 'Enter') commitName();
+    if (e.key === 'Enter')  commitName();
     if (e.key === 'Escape') { setDraftName(title); setIsEditingName(false); }
   }
 
   return (
-    <Box style={{ width: 300, flexShrink: 0, display: 'flex', flexDirection: 'column', height: '100%' }}>
-
+    <Box
+      style={{
+        width: 300,
+        flexShrink: 0,
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100%',
+        background: draftBgColor,
+        borderRadius: 14,
+      }}
+    >
       {/* ── Column header ── */}
       <Box style={{ padding: '12px 12px 8px', position: 'relative' }}>
         <Inline space="space.100" alignBlock="center" spread="space-between">
 
-          {/* Left: color dot + name */}
+          {/* Left side: accent dot + [bg swatch] + name */}
           <Inline space="space.075" alignBlock="center" grow="fill">
 
-            {/* Color swatch / picker trigger */}
+            {/* Accent colour dot */}
             {isEditable ? (
               <Box style={{ position: 'relative', flexShrink: 0 }}>
-                <Tooltip content="Change color">
+                <Tooltip content="Change accent color">
                   <button
-                    onClick={() => setShowColorPicker(v => !v)}
+                    onClick={() => { setShowAccentPicker(v => !v); setShowBgPicker(false); }}
                     style={{
-                      width: 18,
-                      height: 18,
+                      width: 16,
+                      height: 16,
                       borderRadius: '50%',
                       background: draftColor,
-                      border: '2px solid rgba(255,255,255,0.7)',
-                      boxShadow: `0 0 0 2px ${draftColor}55`,
+                      border: '2px solid rgba(255,255,255,0.8)',
+                      boxShadow: `0 0 0 2px ${draftColor}66`,
                       cursor: 'pointer',
                       padding: 0,
                       outline: 'none',
-                      transition: 'box-shadow 0.15s',
                     }}
                   />
                 </Tooltip>
 
-                {/* Color picker popover */}
-                {showColorPicker && (
+                {showAccentPicker && (
                   <Box
-                    ref={colorPickerRef}
+                    ref={accentPickerRef}
                     style={{
-                      position: 'absolute',
-                      top: 26,
-                      left: 0,
-                      zIndex: 400,
-                      background: '#fff',
-                      borderRadius: 10,
+                      position: 'absolute', top: 24, left: 0, zIndex: 500,
+                      background: '#fff', borderRadius: 10,
                       boxShadow: '0 8px 24px rgba(9,30,66,0.22)',
                       border: '1px solid #E6EAF4',
                       padding: 10,
@@ -366,21 +372,18 @@ function Column({
                       gap: 6,
                     }}
                   >
-                    {COLOR_PALETTE.map(c => (
+                    <Box style={{ gridColumn: '1 / -1', marginBottom: 4 }}>
+                      <Text size="small" weight="medium" color="color.text.subtle">Accent colour</Text>
+                    </Box>
+                    {ACCENT_PALETTE.map(c => (
                       <Tooltip key={c} content={c}>
                         <button
-                          onClick={() => commitColor(c)}
+                          onClick={() => commitAccentColor(c)}
                           style={{
-                            width: 24,
-                            height: 24,
-                            borderRadius: '50%',
+                            width: 24, height: 24, borderRadius: '50%',
                             background: c,
-                            border: c === draftColor
-                              ? '3px solid #172B4D'
-                              : '2px solid rgba(0,0,0,0.08)',
-                            cursor: 'pointer',
-                            padding: 0,
-                            outline: 'none',
+                            border: c === draftColor ? '3px solid #172B4D' : '2px solid rgba(0,0,0,0.08)',
+                            cursor: 'pointer', padding: 0, outline: 'none',
                             transition: 'transform 0.1s',
                           }}
                           onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.18)')}
@@ -392,19 +395,72 @@ function Column({
                 )}
               </Box>
             ) : (
-              <Box
-                style={{
-                  width: 12,
-                  height: 12,
-                  borderRadius: '50%',
-                  background: color,
-                  flexShrink: 0,
-                  boxShadow: `0 0 0 3px ${color}33`,
-                }}
-              />
+              <Box style={{
+                width: 12, height: 12, borderRadius: '50%',
+                background: color, flexShrink: 0,
+                boxShadow: `0 0 0 3px ${color}33`,
+              }} />
             )}
 
-            {/* Column name — inline edit */}
+            {/* Background colour swatch */}
+            {isEditable && (
+              <Box style={{ position: 'relative', flexShrink: 0 }}>
+                <Tooltip content="Change column background">
+                  <button
+                    onClick={() => { setShowBgPicker(v => !v); setShowAccentPicker(false); }}
+                    style={{
+                      width: 16,
+                      height: 16,
+                      borderRadius: 4,
+                      background: draftBgColor,
+                      border: '2px solid rgba(0,0,0,0.18)',
+                      cursor: 'pointer',
+                      padding: 0,
+                      outline: 'none',
+                      boxShadow: '0 1px 3px rgba(0,0,0,0.12)',
+                    }}
+                  />
+                </Tooltip>
+
+                {showBgPicker && (
+                  <Box
+                    ref={bgPickerRef}
+                    style={{
+                      position: 'absolute', top: 24, left: 0, zIndex: 500,
+                      background: '#fff', borderRadius: 10,
+                      boxShadow: '0 8px 24px rgba(9,30,66,0.22)',
+                      border: '1px solid #E6EAF4',
+                      padding: 10,
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(7, 24px)',
+                      gap: 6,
+                    }}
+                  >
+                    <Box style={{ gridColumn: '1 / -1', marginBottom: 4 }}>
+                      <Text size="small" weight="medium" color="color.text.subtle">Column background</Text>
+                    </Box>
+                    {BG_PALETTE.map(c => (
+                      <Tooltip key={c} content={c}>
+                        <button
+                          onClick={() => commitBgColor(c)}
+                          style={{
+                            width: 24, height: 24, borderRadius: 4,
+                            background: c,
+                            border: c === draftBgColor ? '3px solid #172B4D' : '2px solid rgba(0,0,0,0.12)',
+                            cursor: 'pointer', padding: 0, outline: 'none',
+                            transition: 'transform 0.1s',
+                          }}
+                          onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.18)')}
+                          onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}
+                        />
+                      </Tooltip>
+                    ))}
+                  </Box>
+                )}
+              </Box>
+            )}
+
+            {/* Column name */}
             {isEditable && isEditingName ? (
               <Box style={{ display: 'flex', alignItems: 'center', gap: 4, flex: 1 }}>
                 <input
@@ -415,28 +471,18 @@ function Column({
                   onBlur={commitName}
                   style={{
                     flex: 1,
-                    fontSize: 14,
-                    fontWeight: 700,
-                    color: '#172B4D',
-                    border: 'none',
-                    borderBottom: '2px solid #0052CC',
-                    background: 'transparent',
-                    outline: 'none',
-                    padding: '2px 0',
-                    minWidth: 0,
-                    lineHeight: 1.4,
+                    fontSize: 14, fontWeight: 700, color: '#172B4D',
+                    border: 'none', borderBottom: '2px solid #0052CC',
+                    background: 'transparent', outline: 'none',
+                    padding: '2px 0', minWidth: 0, lineHeight: 1.4,
                   }}
                 />
-                <button
-                  onMouseDown={e => { e.preventDefault(); commitName(); }}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2, color: '#00875A', display: 'flex' }}
-                >
+                <button onMouseDown={e => { e.preventDefault(); commitName(); }}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2, color: '#00875A', display: 'flex' }}>
                   <Check label="Save" size="small" />
                 </button>
-                <button
-                  onMouseDown={e => { e.preventDefault(); setDraftName(title); setIsEditingName(false); }}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2, color: '#FF5630', display: 'flex' }}
-                >
+                <button onMouseDown={e => { e.preventDefault(); setDraftName(title); setIsEditingName(false); }}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2, color: '#FF5630', display: 'flex' }}>
                   <Cross label="Cancel" size="small" />
                 </button>
               </Box>
@@ -445,22 +491,15 @@ function Column({
                 style={{ color: '#172B4D', flex: 1, minWidth: 0 }}
                 onClick={isEditable ? () => setIsEditingName(true) : undefined}
               >
-                <Text
-                  as="strong"
-                  weight="bold"
-                  size="medium"
-                  color="inherit"
-                >
+                <Text as="strong" weight="bold" size="medium" color="inherit">
                   {isEditable ? draftName || title : title}
                 </Text>
-                {isEditable && (
-                  <Text size="small" color="color.text.subtlest"> ✎</Text>
-                )}
+                {isEditable && <Text size="small" color="color.text.subtlest"> ✎</Text>}
               </Box>
             )}
           </Inline>
 
-          {/* Right: overdue badge + count + more */}
+          {/* Right: badges + more */}
           <Inline space="space.050" alignBlock="center">
             {overdueInCol > 0 && <Badge appearance="important">{overdueInCol}</Badge>}
             <Badge>{items.length}</Badge>
@@ -484,7 +523,7 @@ function Column({
           flex: 1,
           overflowY: 'auto',
           padding: '4px 10px 10px',
-          background: isDragOver ? 'rgba(9,30,66,0.08)' : 'rgba(255,255,255,0.26)',
+          background: isDragOver ? 'rgba(9,30,66,0.06)' : 'transparent',
           borderRadius: '0 0 12px 12px',
           minHeight: 40,
           transition: 'background 0.15s',
@@ -492,11 +531,8 @@ function Column({
       >
         {items.length === 0 ? (
           <Box style={{
-            textAlign: 'center',
-            color: 'rgba(9,30,66,0.35)',
-            fontSize: 12,
-            padding: '16px 8px',
-            fontStyle: 'italic',
+            textAlign: 'center', color: 'rgba(9,30,66,0.35)',
+            fontSize: 12, padding: '16px 8px', fontStyle: 'italic',
           }}>
             No items
           </Box>
@@ -555,6 +591,7 @@ export default function Dashboard({
   const [draggingItemId,      setDraggingItemId]      = useState<string | null>(null);
   const [itemColumnOverrides, setItemColumnOverrides] = useState<Record<string, string>>({});
   const [columnItems,         setColumnItems]         = useState<Record<string, string[]>>({});
+  const [addCardColumnId,     setAddCardColumnId]     = useState<string | null>(null);
 
   const checkedOutItems = equipment.filter(e => e.status === 'checked_out');
 
@@ -567,77 +604,69 @@ export default function Dashboard({
     setColumnItems(prev => {
       const next: Record<string, string[]> = {};
 
-      const checkedOutIds = equipment
-        .filter(item => item.status === 'checked_out')
-        .map(item => item.id);
-
+      const checkedOutIds    = equipment.filter(i => i.status === 'checked_out').map(i => i.id);
       const existingCheckedOut = (prev['checked-out'] ?? []).filter(id => checkedOutIds.includes(id));
       const newCheckedOut      = checkedOutIds.filter(id => !existingCheckedOut.includes(id));
       next['checked-out']      = [...existingCheckedOut, ...newCheckedOut];
 
-      categories.forEach(category => {
-        const ids     = equipment
-          .filter(item => item.status !== 'archived' && item.status !== 'checked_out' && getColumnForItem(item) === category.id)
-          .map(item => item.id);
-        const existing = (prev[category.id] ?? []).filter(id => ids.includes(id));
+      categories.forEach(cat => {
+        const ids      = equipment
+          .filter(i => i.status !== 'archived' && i.status !== 'checked_out' && getColumnForItem(i) === cat.id)
+          .map(i => i.id);
+        const existing = (prev[cat.id] ?? []).filter(id => ids.includes(id));
         const added    = ids.filter(id => !existing.includes(id));
-        next[category.id] = [...existing, ...added];
+        next[cat.id]   = [...existing, ...added];
       });
 
       return next;
     });
   }, [equipment, categories, itemColumnOverrides]);
 
-  function handleDropItem(equipmentId: string, destinationColumnId: string) {
+  function handleDropItem(equipmentId: string, destColId: string) {
     const item = equipment.find(e => e.id === equipmentId);
     if (!item || item.status === 'archived') return;
 
-    const isCheckedOutColumn = destinationColumnId === 'checked-out';
-    const isCategoryColumn   = categories.some(c => c.id === destinationColumnId);
+    const isCheckedOutCol = destColId === 'checked-out';
+    const isCategoryCol   = categories.some(c => c.id === destColId);
 
     if (item.status === 'checked_out') {
-      if (!isCategoryColumn) return;
-      setDraggingItemId(null);
-      setCheckInItem(item);
-      return;
+      if (!isCategoryCol) return;
+      setDraggingItemId(null); setCheckInItem(item); return;
     }
-    if (isCheckedOutColumn) {
-      setDraggingItemId(null);
-      setCheckOutItem(item);
-      return;
+    if (isCheckedOutCol) {
+      setDraggingItemId(null); setCheckOutItem(item); return;
     }
+    const srcColId = getColumnForItem(item);
+    if (srcColId === destColId || !isCategoryCol) return;
 
-    const sourceColumnId = getColumnForItem(item);
-    if (sourceColumnId === destinationColumnId || !isCategoryColumn) return;
-
-    setItemColumnOverrides(prev => ({ ...prev, [equipmentId]: destinationColumnId }));
+    setItemColumnOverrides(prev => ({ ...prev, [equipmentId]: destColId }));
     setColumnItems(prev => {
       const next = { ...prev };
-      next[sourceColumnId]      = (next[sourceColumnId] ?? []).filter(id => id !== equipmentId);
-      next[destinationColumnId] = [...(next[destinationColumnId] ?? []).filter(id => id !== equipmentId), equipmentId];
+      next[srcColId]  = (next[srcColId]  ?? []).filter(id => id !== equipmentId);
+      next[destColId] = [...(next[destColId] ?? []).filter(id => id !== equipmentId), equipmentId];
       return next;
     });
   }
 
+  // Opens the Add Item modal pre-set to this column's category
   function handleAddCard(columnId: string) {
     if (columnId === 'checked-out') return;
-    const category = categories.find(c => c.id === columnId);
-    if (!category) return;
-    const name      = window.prompt(`New item name for ${category.name}`)?.trim();
-    if (!name) return;
-    const tagNumber = window.prompt('Tag number (e.g. #20)')?.trim();
-    if (!tagNumber) return;
-    onAddEquipment({ name, tagNumber, categoryId: category.id, status: 'available' });
+    setAddCardColumnId(columnId);
+  }
+
+  function handleAddItem({ name, tagNumber, categoryId }: {
+    name: string; tagNumber: string; categoryId: string; conditionNotes: string;
+  }) {
+    onAddEquipment({ name, tagNumber, categoryId, status: 'available' });
+    setAddCardColumnId(null);
   }
 
   function handleCheckOut(co: Omit<Checkout, 'id'>) {
-    onCheckOut(co);
-    setCheckOutItem(null);
+    onCheckOut(co); setCheckOutItem(null);
   }
 
   function handleCheckIn(checkoutId: string, note: string) {
-    onCheckIn(checkoutId, note);
-    setCheckInItem(null);
+    onCheckIn(checkoutId, note); setCheckInItem(null);
   }
 
   function handleReminder(item: Equipment) {
@@ -653,6 +682,7 @@ export default function Dashboard({
       id: 'checked-out',
       title: 'Checked Out',
       color: '#172B4D',
+      bgColor: '#EEF1F8',
       isEditable: false,
       items: (columnItems['checked-out'] ?? checkedOutItems.map(i => i.id))
         .map(id => equipment.find(i => i.id === id))
@@ -662,6 +692,7 @@ export default function Dashboard({
       id: cat.id,
       title: cat.name,
       color: cat.color,
+      bgColor: cat.bgColor,
       isEditable: role === 'super_admin',
       items: (columnItems[cat.id] ?? equipment
         .filter(i => i.status !== 'archived' && i.status !== 'checked_out' && getColumnForItem(i) === cat.id)
@@ -689,7 +720,6 @@ export default function Dashboard({
           <div
             key={col.id}
             style={{
-              background: '#EEF1F8',
               borderRadius: 14,
               width: 300,
               flexShrink: 0,
@@ -704,6 +734,7 @@ export default function Dashboard({
               id={col.id}
               title={col.title}
               color={col.color}
+              bgColor={col.bgColor}
               items={col.items}
               checkouts={checkouts}
               users={users}
@@ -722,6 +753,16 @@ export default function Dashboard({
           </div>
         ))}
       </div>
+
+      {/* Add Item modal — opened from "Add a card" */}
+      {addCardColumnId && (
+        <AddItemModal
+          categories={categories}
+          defaultCategoryId={addCardColumnId}
+          onClose={() => setAddCardColumnId(null)}
+          onConfirm={handleAddItem}
+        />
+      )}
 
       {detailItem && (
         <CardDetailModal

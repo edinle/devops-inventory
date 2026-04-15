@@ -109,8 +109,8 @@ export default function App() {
     addFlag({ type: 'success', title: 'Profile Updated', description: manager.email });
   }
 
-  function handleUpdateCategory(id: string, name: string, color: string) {
-    setCategories(prev => prev.map(c => c.id === id ? { ...c, name, color } : c));
+  function handleUpdateCategory(id: string, name: string, color: string, bgColor?: string) {
+    setCategories(prev => prev.map(c => c.id === id ? { ...c, name, color, ...(bgColor ? { bgColor } : {}) } : c));
     addFlag({ type: 'success', title: 'Category Updated', description: `${name} column updated` });
   }
 
