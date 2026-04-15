@@ -78,8 +78,8 @@ function EditItemModal({ item, categories, onClose, onConfirm }: EditModalProps)
             <Text as="span" size="small" weight="medium" color="color.text">Category</Text>
             <Box style={{ marginTop: 6 }}>
               <Select
-                options={categoryOptions}
-                value={selectedCategory}
+                options={categories.map((c) => ({ label: c.name, value: c.id }))}
+                value={categoryId ? { label: categories.find((c) => c.id === categoryId)?.name || '', value: categoryId } : null}
                 onChange={(opt) => { if (opt) setCategoryId(opt.value); }}
                 placeholder="Select category"
               />

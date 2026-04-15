@@ -10,6 +10,7 @@ import SectionMessage from '@atlaskit/section-message';
 import { Anchor, Box, Flex, Inline, Stack, Text } from '@atlaskit/primitives';
 import type { User, Manager } from '../types';
 import EditUserModal from './EditUserModal';
+import EditManagerModal from './EditManagerModal';
 
 type Props = {
   users: User[];
@@ -112,6 +113,7 @@ export default function UserManagement({ users, managers, role, onAddUser, onEdi
   const [showAddUser, setShowAddUser] = useState(false);
   const [newManagerEmail, setNewManagerEmail] = useState('');
   const [editUser, setEditUser] = useState<User | null>(null);
+  const [editManager, setEditManager] = useState<Manager | null>(null);
 
   const userHead = {
     cells: [
@@ -264,11 +266,16 @@ export default function UserManagement({ users, managers, role, onAddUser, onEdi
                     {m.role === 'super_admin' ? 'Super Admin' : 'Manager'}
                   </Lozenge>
                 </Inline>
-                {m.role !== 'super_admin' && (
-                  <Button appearance="subtle" onClick={() => onRemoveManager(m.id)}>
-                    Remove
+                <Box style={{ display: 'flex', gap: 8 }}>
+                  <Button appearance="subtle" onClick={() => onEditManager(m.id, { name: m.name, email: m.email, role: m.role })}>
+                    Edit
                   </Button>
-                )}
+                  {m.role !== 'super_admin' && (
+                    <Button appearance="subtle" onClick={() => onRemoveManager(m.id)}>
+                      Remove
+                    </Button>
+                  )}
+                </Box>
               </Box>
             ))}
           </Stack>
@@ -289,6 +296,17 @@ export default function UserManagement({ users, managers, role, onAddUser, onEdi
           onConfirm={(user) => {
             onEditUser(editUser.id, user);
             setEditUser(null);
+          }}
+        />
+      )}
+
+      {editManager && (
+        <EditManagerModal
+          manager={editManager}
+          onClose={() => setEditManager(null)}
+          onConfirm={(manager) => {
+            onEditManager(editManager.id, manager);
+            setEditManager(null);
           }}
         />
       )}
