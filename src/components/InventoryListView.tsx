@@ -16,6 +16,7 @@ import { resolveAtlaskitIcon } from '../utils/resolveAtlaskitIcon';
 import type { Category, Checkout, Equipment, User } from '../types';
 import CheckOutModal from './CheckOutModal';
 import CheckInModal from './CheckInModal';
+import AddItemModal from './AddItemModal';
 
 type Props = {
   equipment: Equipment[];
@@ -31,6 +32,7 @@ type Props = {
   onSendReminder: (checkoutId: string) => void;
   onArchive: (id: string, reason: string) => void;
   onEditItem: (id: string, name: string, categoryId: string) => void;
+  onAddEquipment: (e: Omit<Equipment, 'id' | 'conditionNotes'>) => void;
 };
 
 // ─── Edit Item Modal ──────────────────────────────────────────────────────────
@@ -60,10 +62,10 @@ function EditItemModal({ item, categories, onClose, onConfirm }: EditModalProps)
         <ModalTitle>Edit Item</ModalTitle>
       </ModalHeader>
       <ModalBody>
-        <Box style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <Box style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
           <Box>
-            <Text as="span" size="small" weight="medium">Item name</Text>
-            <Box style={{ marginTop: 4 }}>
+            <Text as="span" size="small" weight="medium" color="color.text">Item name</Text>
+            <Box style={{ marginTop: 6 }}>
               <TextField
                 value={name}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setName(e.target.value)}
@@ -73,8 +75,8 @@ function EditItemModal({ item, categories, onClose, onConfirm }: EditModalProps)
             </Box>
           </Box>
           <Box>
-            <Text as="span" size="small" weight="medium">Category</Text>
-            <Box style={{ marginTop: 4 }}>
+            <Text as="span" size="small" weight="medium" color="color.text">Category</Text>
+            <Box style={{ marginTop: 6 }}>
               <Select
                 options={categoryOptions}
                 value={selectedCategory}
@@ -115,12 +117,14 @@ export default function InventoryListView({
   onSendReminder,
   onArchive,
   onEditItem,
+  onAddEquipment,
 }: Props) {
   const [sortKey, setSortKey] = React.useState<string>('name');
   const [sortOrder, setSortOrder] = React.useState<'ASC' | 'DESC'>('ASC');
   const [checkOutItem, setCheckOutItem] = React.useState<Equipment | null>(null);
   const [checkInItem, setCheckInItem] = React.useState<Equipment | null>(null);
   const [editItem, setEditItem] = React.useState<Equipment | null>(null);
+  const [addItem, setAddItem] = React.useState<boolean>(false);
   const normalizedQuery = query.trim().toLowerCase();
 
   const filtered = equipment.filter((item) => {
@@ -396,6 +400,16 @@ export default function InventoryListView({
         })}
       </Box>
 
+      <Box style={{ marginBottom: 16 }}>
+        <Button 
+          appearance="primary" 
+          onClick={() => setAddItem(true)}
+          iconBefore={resolveAtlaskitIcon(AddIcon)}
+        >
+          Add Item
+        </Button>
+      </Box>
+
       <div className="inventory-table-container">
         <DynamicTable
           head={head}
@@ -450,6 +464,22 @@ export default function InventoryListView({
           onConfirm={(name, categoryId) => {
             onEditItem(editItem.id, name, categoryId);
             setEditItem(null);
+          }}
+        />
+      )}
+
+      {addItem && (
+        <AddItemModal
+          categories={categories}
+          onClose={() => setAddItem(false)}
+          onConfirm={(item) => {
+            onAddEquipment({
+              name: item.name,
+              tagNumber: item.tagNumber,
+              categoryId: item.categoryId,
+              status: 'available',
+            });
+            setAddItem(false);
           }}
         />
       )}

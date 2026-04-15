@@ -12,7 +12,7 @@ import AddIcon from '@atlaskit/icon/core/add';
 import SettingsIcon from '@atlaskit/icon/core/settings';
 import { resolveAtlaskitIcon } from '../utils/resolveAtlaskitIcon';
 
-export type AppView = 'board' | 'inventory' | 'iam' | 'activity';
+export type AppView = 'board' | 'inventory' | 'iam' | 'activity' | 'settings';
 
 type NavItem = {
   id: AppView;
@@ -39,10 +39,6 @@ const primaryItems: NavItem[] = [
 ];
 
 const auxiliaryItems: AuxItem[] = [
-  { id: 'request', label: 'Raise a request', icon: PriorityBlockerIcon },
-  { id: 'channels', label: 'Channels', icon: ScreenIcon },
-  { id: 'invite', label: 'Invite team', icon: PersonAddIcon },
-  { id: 'shortcut', label: 'Add shortcut', icon: AddIcon },
   { id: 'settings', label: 'Project settings', icon: SettingsIcon },
 ];
 
@@ -140,7 +136,13 @@ export default function AppSideNavigation({ activeView, onSelect }: Props) {
         <Box style={{ height: 8 }} />
 
         {auxiliaryItems.map((item) => (
-          <NavRow key={item.id} label={item.label} icon={item.icon} selected={false} />
+          <NavRow 
+            key={item.id} 
+            label={item.label} 
+            icon={item.icon} 
+            selected={activeView === item.id as AppView}
+            onClick={() => onSelect(item.id as AppView)}
+          />
         ))}
       </Box>
 

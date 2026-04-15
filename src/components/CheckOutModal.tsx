@@ -53,16 +53,23 @@ export default function CheckOutModal({ equipment, onClose, onConfirm }: Props) 
         <ModalTitle>Check Out Equipment</ModalTitle>
       </ModalHeader>
       <ModalBody>
-        <Box style={{ marginBottom: 12 }}>
-          <Inline space="space.100" alignBlock="center">
-            <Text as="strong" weight="semibold" color="inherit">
-              Item:
-            </Text>
-            <Text color="inherit">
-              {equipment.name} {equipment.tagNumber}
-            </Text>
-            <Lozenge appearance="inprogress">Checking Out</Lozenge>
-          </Inline>
+        <Box style={{ marginBottom: 16 }}>
+          <Box style={{ 
+            background: '#F4F5F7', 
+            borderRadius: 8, 
+            padding: 16,
+            marginBottom: 16 
+          }}>
+            <Inline space="space.150" alignBlock="center">
+              <Text as="strong" weight="semibold" color="color.text">
+                Item:
+              </Text>
+              <Text color="color.text">
+                {equipment.name} {equipment.tagNumber}
+              </Text>
+              <Lozenge appearance="inprogress">Checking Out</Lozenge>
+            </Inline>
+          </Box>
         </Box>
 
         <Form onSubmit={handleSubmit}>

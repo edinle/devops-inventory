@@ -17,6 +17,7 @@ import AppTopNavigation from './components/AppTopNavigation';
 import AppSideNavigation, { type AppView } from './components/AppSideNavigation';
 import AppPageHeader from './components/AppPageHeader';
 import InventoryListView from './components/InventoryListView';
+import Settings from './components/Settings';
 import { Box, Text, xcss } from '@atlaskit/primitives';
 import './app-shell.css';
 
@@ -81,14 +82,29 @@ export default function App() {
     addFlag({ type: 'success', title: 'Student Added', description: u.fullName });
   }
 
+  function handleEditUser(id: string, user: Omit<User, 'id'>) {
+    setUsers(prev => prev.map(u => u.id === id ? { ...user, id } : u));
+    addFlag({ type: 'success', title: 'Student Updated', description: user.fullName });
+  }
+
   function handleAddManager(email: string) {
     setManagers(prev => [...prev, { id: `m-${Date.now()}`, name: email.split('@')[0], email, role: 'manager' }]);
     addFlag({ type: 'success', title: 'Manager Added', description: email });
   }
 
+  function handleEditManager(id: string, manager: Omit<Manager, 'id'>) {
+    setManagers(prev => prev.map(m => m.id === id ? { ...manager, id } : m));
+    addFlag({ type: 'success', title: 'Manager Updated', description: manager.email });
+  }
+
   function handleRemoveManager(id: string) {
     setManagers(prev => prev.filter(m => m.id !== id));
     addFlag({ type: 'info', title: 'Manager Removed', description: '' });
+  }
+
+  function handleUpdateProfile(manager: Omit<Manager, 'id'>) {
+    setManagers(prev => prev.map(m => m.id === CURRENT_MANAGER.id ? { ...manager, id: CURRENT_MANAGER.id } : m));
+    addFlag({ type: 'success', title: 'Profile Updated', description: manager.email });
   }
 
   function handleAddEquipment(e: Omit<Equipment, 'id' | 'conditionNotes'>) {
@@ -160,6 +176,14 @@ export default function App() {
       secondaryActionLabel: 'Identity and access',
       onPrimaryAction: () => setActiveView('inventory' as AppView),
       onSecondaryAction: () => setActiveView('iam' as AppView),
+    },
+    settings: {
+      breadcrumbs: ['Administration', 'Project settings'],
+      title: 'Project settings',
+      primaryActionLabel: 'Inventory list',
+      secondaryActionLabel: 'Reports',
+      onPrimaryAction: () => setActiveView('inventory' as AppView),
+      onSecondaryAction: () => setActiveView('activity' as AppView),
     },
   } as const;
 
@@ -236,6 +260,7 @@ export default function App() {
                 onSendReminder={handleSendReminder}
                 onArchive={handleArchive}
                 onEditItem={handleEditItem}
+                onAddEquipment={handleAddEquipment}
               />
             )}
 
@@ -246,7 +271,9 @@ export default function App() {
                   managers={managers}
                   role={CURRENT_MANAGER.role}
                   onAddUser={handleAddUser}
+                  onEditUser={handleEditUser}
                   onAddManager={handleAddManager}
+                  onEditManager={handleEditManager}
                   onRemoveManager={handleRemoveManager}
                 />
               </div>
@@ -255,6 +282,15 @@ export default function App() {
             {activeView === 'activity' && (
               <div className="app-pane">
                 <ActivityLog log={activityLog} equipment={equipment} users={users} />
+              </div>
+            )}
+
+            {activeView === 'settings' && (
+              <div className="app-pane">
+                <Settings 
+                  currentManager={CURRENT_MANAGER}
+                  onUpdateProfile={handleUpdateProfile}
+                />
               </div>
             )}
           </div>

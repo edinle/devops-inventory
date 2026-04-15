@@ -9,13 +9,16 @@ import Avatar from '@atlaskit/avatar';
 import SectionMessage from '@atlaskit/section-message';
 import { Anchor, Box, Flex, Inline, Stack, Text } from '@atlaskit/primitives';
 import type { User, Manager } from '../types';
+import EditUserModal from './EditUserModal';
 
 type Props = {
   users: User[];
   managers: Manager[];
   role: 'super_admin' | 'manager';
   onAddUser: (u: Omit<User, 'id'>) => void;
+  onEditUser: (id: string, user: Omit<User, 'id'>) => void;
   onAddManager: (email: string) => void;
+  onEditManager: (id: string, manager: Omit<Manager, 'id'>) => void;
   onRemoveManager: (id: string) => void;
 };
 
@@ -105,17 +108,19 @@ function AddUserModal({ onClose, onAdd }: { onClose: () => void; onAdd: (u: Omit
   );
 }
 
-export default function UserManagement({ users, managers, role, onAddUser, onAddManager, onRemoveManager }: Props) {
+export default function UserManagement({ users, managers, role, onAddUser, onEditUser, onAddManager, onEditManager, onRemoveManager }: Props) {
   const [showAddUser, setShowAddUser] = useState(false);
   const [newManagerEmail, setNewManagerEmail] = useState('');
+  const [editUser, setEditUser] = useState<User | null>(null);
 
   const userHead = {
     cells: [
-      { key: 'name', content: 'Name', width: 22 },
+      { key: 'name', content: 'Name', width: 20 },
       { key: 'bruin', content: 'Bruin Card', width: 15 },
-      { key: 'pub', content: 'Publication', width: 20 },
-      { key: 'phone', content: 'Phone', width: 18 },
-      { key: 'email', content: 'Email', width: 25 },
+      { key: 'pub', content: 'Publication', width: 18 },
+      { key: 'phone', content: 'Phone', width: 16 },
+      { key: 'email', content: 'Email', width: 22 },
+      { key: 'actions', content: 'Actions', width: 12 },
     ],
   };
 
@@ -151,6 +156,18 @@ export default function UserManagement({ users, managers, role, onAddUser, onAdd
           <Anchor href={`mailto:${u.email}`}>
             {u.email}
           </Anchor>
+        ),
+      },
+      {
+        key: 'actions',
+        content: (
+          <Button
+            appearance="subtle"
+            spacing="compact"
+            onClick={() => setEditUser(u)}
+          >
+            Edit
+          </Button>
         ),
       },
     ],
@@ -262,6 +279,17 @@ export default function UserManagement({ users, managers, role, onAddUser, onAdd
         <AddUserModal
           onClose={() => setShowAddUser(false)}
           onAdd={(u) => { onAddUser(u); setShowAddUser(false); }}
+        />
+      )}
+
+      {editUser && (
+        <EditUserModal
+          user={editUser}
+          onClose={() => setEditUser(null)}
+          onConfirm={(user) => {
+            onEditUser(editUser.id, user);
+            setEditUser(null);
+          }}
         />
       )}
     </Box>

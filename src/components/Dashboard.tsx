@@ -537,9 +537,8 @@ export default function Dashboard({
               flexShrink: 0,
               display: 'flex',
               flexDirection: 'column',
-              maxHeight: 'calc(100vh - 160px)',
-              height: 'fit-content',
               minHeight: '120px',
+              height: 'fit-content',
               boxShadow: '0 10px 24px rgba(17, 31, 67, 0.24)',
             }}
           >
