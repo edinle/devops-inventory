@@ -3,6 +3,9 @@ import Button from '@atlaskit/button/new';
 import DynamicTable from '@atlaskit/dynamic-table';
 import Lozenge from '@atlaskit/lozenge';
 import { Box, Pressable, Text } from '@atlaskit/primitives';
+import Modal, { ModalBody, ModalFooter, ModalHeader, ModalTitle } from '@atlaskit/modal-dialog';
+import TextField from '@atlaskit/textfield';
+import Select from '@atlaskit/select';
 import type { Category, Checkout, Equipment, User } from '../types';
 import CheckOutModal from './CheckOutModal';
 import CheckInModal from './CheckInModal';
@@ -20,7 +23,70 @@ type Props = {
   onCheckIn: (checkoutId: string, note: string) => void;
   onSendReminder: (checkoutId: string) => void;
   onArchive: (id: string, reason: string) => void;
+  onEditItem: (id: string, name: string, categoryId: string) => void;
 };
+
+// ─── Edit Item Modal ──────────────────────────────────────────────────────────
+type EditModalProps = {
+  item: Equipment;
+  categories: Category[];
+  onClose: () => void;
+  onConfirm: (name: string, categoryId: string) => void;
+};
+
+function EditItemModal({ item, categories, onClose, onConfirm }: EditModalProps) {
+  const [name, setName] = React.useState(item.name);
+  const [categoryId, setCategoryId] = React.useState(item.categoryId);
+
+  const categoryOptions = categories.map((c) => ({ label: c.name, value: c.id }));
+  const selectedCategory = categoryOptions.find((o) => o.value === categoryId) ?? null;
+
+  function handleSubmit() {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    onConfirm(trimmed, categoryId);
+  }
+
+  return (
+    <Modal onClose={onClose} width="small">
+      <ModalHeader>
+        <ModalTitle>Edit Item</ModalTitle>
+      </ModalHeader>
+      <ModalBody>
+        <Box style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <Box>
+            <Text as="span" size="small" weight="medium">Item name</Text>
+            <Box style={{ marginTop: 4 }}>
+              <TextField
+                value={name}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setName(e.target.value)}
+                placeholder="Equipment name"
+                autoFocus
+              />
+            </Box>
+          </Box>
+          <Box>
+            <Text as="span" size="small" weight="medium">Category</Text>
+            <Box style={{ marginTop: 4 }}>
+              <Select
+                options={categoryOptions}
+                value={selectedCategory}
+                onChange={(opt) => { if (opt) setCategoryId(opt.value); }}
+                placeholder="Select category"
+              />
+            </Box>
+          </Box>
+        </Box>
+      </ModalBody>
+      <ModalFooter>
+        <Button appearance="subtle" onClick={onClose}>Cancel</Button>
+        <Button appearance="primary" onClick={handleSubmit} isDisabled={!name.trim()}>
+          Save changes
+        </Button>
+      </ModalFooter>
+    </Modal>
+  );
+}
 
 function statusMeta(status: Equipment['status']) {
   if (status === 'available') return { label: 'Available', appearance: 'success' as const };
@@ -41,11 +107,13 @@ export default function InventoryListView({
   onCheckIn,
   onSendReminder,
   onArchive,
+  onEditItem,
 }: Props) {
   const [sortKey, setSortKey] = React.useState<string>('name');
   const [sortOrder, setSortOrder] = React.useState<'ASC' | 'DESC'>('ASC');
   const [checkOutItem, setCheckOutItem] = React.useState<Equipment | null>(null);
   const [checkInItem, setCheckInItem] = React.useState<Equipment | null>(null);
+  const [editItem, setEditItem] = React.useState<Equipment | null>(null);
   const normalizedQuery = query.trim().toLowerCase();
 
   const filtered = equipment.filter((item) => {
@@ -165,35 +233,47 @@ export default function InventoryListView({
         {
           key: 'actions',
           content: (
-            <Box style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            <Box style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+              {/* Check Out — only for available items */}
               {item.status === 'available' && (
                 <Button appearance="primary" spacing="compact" onClick={() => setCheckOutItem(item)}>
-                  Check out
+                  Check Out
                 </Button>
               )}
 
+              {/* Check In + Remind — only for checked-out items */}
               {item.status === 'checked_out' && (
                 <>
                   <Button appearance="default" spacing="compact" onClick={() => setCheckInItem(item)}>
-                    Check in
+                    Check In
                   </Button>
-                  {item.status === 'checked_out' && (
-                    <Button
-                      appearance="subtle"
-                      spacing="compact"
-                      onClick={() => {
-                        const checkout = checkouts.find((entry) => entry.equipmentId === item.id);
-                        if (checkout) {
-                          onSendReminder(checkout.id);
-                        }
-                      }}
-                    >
-                      Remind
-                    </Button>
-                  )}
+                  <Button
+                    appearance="subtle"
+                    spacing="compact"
+                    onClick={() => {
+                      const checkout = checkouts.find((entry) => entry.equipmentId === item.id);
+                      if (checkout) {
+                        onSendReminder(checkout.id);
+                      }
+                    }}
+                  >
+                    Remind
+                  </Button>
                 </>
               )}
 
+              {/* Edit — available to all roles, not on archived items */}
+              {item.status !== 'archived' && (
+                <Button
+                  appearance="subtle"
+                  spacing="compact"
+                  onClick={() => setEditItem(item)}
+                >
+                  Edit
+                </Button>
+              )}
+
+              {/* Archive — super_admin only, not on already-archived items */}
               {role === 'super_admin' && item.status !== 'archived' && (
                 <Button
                   appearance="subtle"
@@ -230,6 +310,26 @@ export default function InventoryListView({
 
   return (
     <>
+      <style>{`
+        .inventory-table-container {
+          overflow-x: auto;
+          position: relative;
+        }
+        .inventory-table-container [data-testid="dynamic-table"] {
+          min-width: 800px;
+        }
+        .inventory-table-container th:last-child,
+        .inventory-table-container td:last-child {
+          position: sticky;
+          right: 0;
+          background: white;
+          box-shadow: -2px 0 4px rgba(0,0,0,0.1);
+          z-index: 1;
+        }
+        .inventory-table-container th:last-child {
+          z-index: 2;
+        }
+      `}</style>
       <Box style={{ padding: 24 }}>
       <Box style={{ display: 'flex', gap: 8, marginBottom: 14, flexWrap: 'wrap' }}>
         {tabItems.map((tab) => {
@@ -271,24 +371,26 @@ export default function InventoryListView({
         })}
       </Box>
 
-      <DynamicTable
-        head={head}
-        rows={rows}
-        rowsPerPage={12}
-        defaultPage={1}
-        isFixedSize
-        sortKey={sortKey}
-        sortOrder={sortOrder}
-        onSort={(data) => {
-          const nextSortKey = data?.key;
-          const nextSortOrder = data?.sortOrder;
-          if (!nextSortKey || !nextSortOrder) {
-            return;
-          }
-          setSortKey(nextSortKey);
-          setSortOrder(nextSortOrder);
-        }}
-      />
+      <div className="inventory-table-container">
+        <DynamicTable
+          head={head}
+          rows={rows}
+          rowsPerPage={12}
+          defaultPage={1}
+          isFixedSize
+          sortKey={sortKey}
+          sortOrder={sortOrder}
+          onSort={(data) => {
+            const nextSortKey = data?.key;
+            const nextSortOrder = data?.sortOrder;
+            if (!nextSortKey || !nextSortOrder) {
+              return;
+            }
+            setSortKey(nextSortKey);
+            setSortOrder(nextSortOrder);
+          }}
+        />
+      </div>
       </Box>
 
       {checkOutItem && (
@@ -311,6 +413,18 @@ export default function InventoryListView({
           onConfirm={(note) => {
             onCheckIn(checkInCheckout.id, note);
             setCheckInItem(null);
+          }}
+        />
+      )}
+
+      {editItem && (
+        <EditItemModal
+          item={editItem}
+          categories={categories}
+          onClose={() => setEditItem(null)}
+          onConfirm={(name, categoryId) => {
+            onEditItem(editItem.id, name, categoryId);
+            setEditItem(null);
           }}
         />
       )}
