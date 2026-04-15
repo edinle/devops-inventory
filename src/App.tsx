@@ -15,7 +15,7 @@ import ActivityLog from './components/ActivityLog';
 import UserManagement from './components/UserManagement';
 import EquipmentManagement from './components/EquipmentManagement';
 import TrelloTopNav from './components/TrelloTopNav';
-import { Box, xcss } from '@atlaskit/primitives';
+import { Box, Text, xcss } from '@atlaskit/primitives';
 
 type FlagData = { id: string; title: string; description: string; type: 'success' | 'info' };
 
@@ -141,8 +141,8 @@ export default function App() {
           />
         )}
         {selectedTab !== 0 && (
-          <div style={{ flex: 1, overflowY: 'auto', background: '#F4F5F7' }}>
-            <div style={{ padding: '24px 32px', maxWidth: '1200px', margin: '0 auto' }}>
+          <Box style={{ flex: 1, overflowY: 'auto', background: '#F4F5F7' }}>
+            <Box style={{ padding: '24px 32px', maxWidth: 1200, margin: '0 auto' }}>
               {selectedTab === 1 && <ActivityLog log={activityLog} equipment={equipment} users={users} />}
               {selectedTab === 2 && (
                 <UserManagement
@@ -163,8 +163,8 @@ export default function App() {
                   onArchive={handleArchive}
                 />
               )}
-            </div>
-          </div>
+            </Box>
+          </Box>
         )}
       </Box>
 
@@ -173,14 +173,22 @@ export default function App() {
           <Flag
             key={f.id} id={f.id} title={f.title} description={f.description}
             icon={
-              <span style={{
-                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                width: 24, height: 24, borderRadius: '50%',
-                background: f.type === 'success' ? '#36B37E' : '#0052CC',
-                color: 'white', fontWeight: 700, fontSize: 13,
-              }}>
-                {f.type === 'success' ? '✓' : 'i'}
-              </span>
+              <Box
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: 24,
+                  height: 24,
+                  borderRadius: 999,
+                  background: f.type === 'success' ? '#36B37E' : '#0052CC',
+                  color: 'white',
+                }}
+              >
+                <Text as="strong" size="small" weight="bold" color="inherit">
+                  {f.type === 'success' ? '✓' : 'i'}
+                </Text>
+              </Box>
             }
           />
         ))}

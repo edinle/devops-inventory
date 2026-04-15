@@ -7,6 +7,7 @@ import TextField from '@atlaskit/textfield';
 import Select from '@atlaskit/select';
 import Lozenge from '@atlaskit/lozenge';
 import SectionMessage from '@atlaskit/section-message';
+import { Box, Flex, Inline, Pressable, Stack, Text } from '@atlaskit/primitives';
 import type { Equipment, Category } from '../types';
 
 type Props = {
@@ -92,10 +93,17 @@ function ArchiveModal({ item, onClose, onConfirm }: { item: Equipment; onClose: 
         <SectionMessage appearance="warning">
           Archiving preserves the item's history. It will not appear in checkout flows. This action can be reversed by an admin.
         </SectionMessage>
-        <div style={{ marginTop: '12px' }}>
-          <strong>Item:</strong> {item.name} {item.tagNumber}
-        </div>
-        <div style={{ marginTop: '12px' }}>
+        <Box style={{ marginTop: 12 }}>
+          <Inline space="space.100" alignBlock="center">
+            <Text as="strong" weight="semibold" color="inherit">
+              Item:
+            </Text>
+            <Text color="inherit">
+              {item.name} {item.tagNumber}
+            </Text>
+          </Inline>
+        </Box>
+        <Box style={{ marginTop: 12 }}>
           <Field name="reason" label="Reason for archiving" isRequired>
             {() => (
               <TextField
@@ -105,7 +113,7 @@ function ArchiveModal({ item, onClose, onConfirm }: { item: Equipment; onClose: 
               />
             )}
           </Field>
-        </div>
+        </Box>
       </ModalBody>
       <ModalFooter>
         <Button appearance="subtle" onClick={onClose}>Cancel</Button>
@@ -152,17 +160,30 @@ export default function EquipmentManagement({ equipment, categories, role, onAdd
     return {
       key: item.id,
       cells: [
-        { key: 'name', content: <strong>{item.name}</strong> },
-        { key: 'tag', content: <span style={{ fontFamily: 'monospace', color: '#5E6C84' }}>{item.tagNumber}</span> },
+        {
+          key: 'name',
+          content: (
+            <Text as="strong" weight="semibold" color="inherit">
+              {item.name}
+            </Text>
+          ),
+        },
+        {
+          key: 'tag',
+          content: (
+            <Box style={{ color: '#5E6C84', fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace' }}>
+              <Text size="small" color="inherit">
+                {item.tagNumber}
+              </Text>
+            </Box>
+          ),
+        },
         { key: 'category', content: cat ? (
-          <span style={{
-            background: cat.color + '22',
-            color: cat.color,
-            padding: '2px 8px',
-            borderRadius: '10px',
-            fontSize: '12px',
-            fontWeight: 600,
-          }}>{cat.name}</span>
+          <Box style={{ display: 'inline-flex', alignItems: 'center', borderRadius: 999, padding: '2px 8px', background: `${cat.color}22`, color: cat.color }}>
+            <Text as="span" weight="semibold" size="small" color="inherit">
+              {cat.name}
+            </Text>
+          </Box>
         ) : '—' },
         {
           key: 'status',
@@ -175,10 +196,28 @@ export default function EquipmentManagement({ equipment, categories, role, onAdd
         {
           key: 'notes',
           content: item.archivedReason
-            ? <span style={{ color: '#97A0AF', fontStyle: 'italic', fontSize: '12px' }}>Archived: {item.archivedReason}</span>
+            ? (
+              <Box style={{ color: '#97A0AF' }}>
+                <Text as="em" size="small" color="inherit">
+                  Archived: {item.archivedReason}
+                </Text>
+              </Box>
+            )
             : item.conditionNotes.length > 0
-              ? <span style={{ fontSize: '12px', color: '#5E6C84' }}>{item.conditionNotes[item.conditionNotes.length - 1]}</span>
-              : <span style={{ color: '#97A0AF' }}>—</span>,
+              ? (
+                <Box style={{ color: '#5E6C84' }}>
+                  <Text size="small" color="inherit">
+                    {item.conditionNotes[item.conditionNotes.length - 1]}
+                  </Text>
+                </Box>
+              )
+              : (
+                <Box style={{ color: '#97A0AF' }}>
+                  <Text size="small" color="inherit">
+                    —
+                  </Text>
+                </Box>
+              ),
         },
         {
           key: 'actions',
@@ -204,43 +243,54 @@ export default function EquipmentManagement({ equipment, categories, role, onAdd
   ];
 
   return (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px', flexWrap: 'wrap', gap: '8px' }}>
-        <div>
-          <h3 style={{ margin: 0, color: '#172B4D' }}>Equipment Inventory</h3>
-          <p style={{ margin: '4px 0 0', color: '#5E6C84', fontSize: '13px' }}>
-            {equipment.filter(e => e.status !== 'archived').length} active items across {categories.length} categories
-          </p>
-        </div>
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-          <div style={{ display: 'flex', gap: '4px' }}>
-            {filterOptions.map(opt => (
-              <button
-                key={opt.value}
-                onClick={() => setFilterStatus(opt.value)}
-                style={{
-                  padding: '4px 10px',
-                  borderRadius: '4px',
-                  border: '1px solid',
-                  borderColor: filterStatus === opt.value ? '#0052CC' : '#DFE1E6',
-                  background: filterStatus === opt.value ? '#DEEBFF' : '#fff',
-                  color: filterStatus === opt.value ? '#0052CC' : '#5E6C84',
-                  cursor: 'pointer',
-                  fontSize: '12px',
-                  fontWeight: 500,
-                }}
-              >
-                {opt.label}
-              </button>
-            ))}
-          </div>
-          {role === 'super_admin' && (
-            <Button appearance="primary" onClick={() => setShowAdd(true)}>
-              Add Item
-            </Button>
-          )}
-        </div>
-      </div>
+    <Box>
+      <Box style={{ marginBottom: 16 }}>
+        <Flex gap="space.200" justifyContent="space-between">
+          <Stack space="space.050">
+            <Box style={{ color: '#172B4D' }}>
+              <Text as="strong" weight="semibold" size="large" color="inherit">
+                Equipment Inventory
+              </Text>
+            </Box>
+            <Box style={{ color: '#5E6C84' }}>
+              <Text size="small" color="inherit">
+                {equipment.filter(e => e.status !== 'archived').length} active items across {categories.length} categories
+              </Text>
+            </Box>
+          </Stack>
+
+          <Inline space="space.150" alignBlock="center">
+            <Inline space="space.050" alignBlock="center">
+              {filterOptions.map(opt => {
+                const isActive = filterStatus === opt.value;
+                return (
+                  <Pressable
+                    key={opt.value}
+                    onClick={() => setFilterStatus(opt.value)}
+                    style={{
+                      padding: '6px 10px',
+                      borderRadius: 8,
+                      border: '1px solid',
+                      borderColor: isActive ? '#0052CC' : '#DFE1E6',
+                      background: isActive ? '#DEEBFF' : '#fff',
+                      color: isActive ? '#0052CC' : '#5E6C84',
+                    }}
+                  >
+                    <Text size="small" weight="medium" color="inherit">
+                      {opt.label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </Inline>
+            {role === 'super_admin' && (
+              <Button appearance="primary" onClick={() => setShowAdd(true)}>
+                Add Item
+              </Button>
+            )}
+          </Inline>
+        </Flex>
+      </Box>
 
       <DynamicTable head={head} rows={rows} rowsPerPage={15} defaultPage={1} isFixedSize />
 
@@ -258,6 +308,6 @@ export default function EquipmentManagement({ equipment, categories, role, onAdd
           onConfirm={(reason) => { onArchive(archiveItem.id, reason); setArchiveItem(null); }}
         />
       )}
-    </div>
+    </Box>
   );
 }

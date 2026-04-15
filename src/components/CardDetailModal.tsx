@@ -211,8 +211,10 @@ export default function CardDetailModal({ equipment, checkouts, users, activityL
                                 .map((n, idx) => (
                                   <Box key={`${idx}-${n.when}`} style={{ paddingLeft: 4 }}>
                                     <Text size="small" color="inherit">
-                                      <span style={{ color: 'rgba(9,30,66,0.55)' }}>{formatWhen(n.when)} • </span>
-                                      {n.note}
+                                      <Box style={{ display: 'inline', color: 'rgba(9,30,66,0.55)' }}>
+                                        {formatWhen(n.when)} •{' '}
+                                      </Box>
+                                      <Box style={{ display: 'inline' }}>{n.note}</Box>
                                     </Text>
                                   </Box>
                                 ))}
@@ -256,11 +258,18 @@ export default function CardDetailModal({ equipment, checkouts, users, activityL
                           <Inline space="space.100" alignBlock="start">
                             <Avatar size="small" name={entry.actorName} />
                             <Box style={{ minWidth: 0 }}>
+                              <Inline space="space.050" alignBlock="center">
+                                <Text as="strong" weight="semibold" size="small" color="inherit">
+                                  {entry.actorName}
+                                </Text>
+                                <Text size="small" color="inherit">
+                                  {secondary}
+                                </Text>
+                              </Inline>
                               <Text size="small" color="inherit">
-                                <strong>{entry.actorName}</strong> {secondary}
-                              </Text>
-                              <Text size="small" color="inherit">
-                                <span style={{ color: 'rgba(9,30,66,0.55)' }}>{formatWhen(entry.timestamp)}</span>
+                                <Box style={{ display: 'inline', color: 'rgba(9,30,66,0.55)' }}>
+                                  {formatWhen(entry.timestamp)}
+                                </Box>
                               </Text>
                               {entry.note && (
                                 <Box style={{ marginTop: 4 }}>
