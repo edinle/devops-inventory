@@ -7,6 +7,7 @@ import { Box, Flex, Inline, Pressable, Text, xcss } from '@atlaskit/primitives';
 import SearchIcon from '@atlaskit/icon/core/search';
 import StarStarredIcon from '@atlaskit/icon/core/star-starred';
 import ShowMoreVerticalIcon from '@atlaskit/icon/core/show-more-vertical';
+import { resolveAtlaskitIcon } from '../utils/resolveAtlaskitIcon';
 
 type Props = {
   workspaceName: string;
@@ -26,6 +27,10 @@ const navInnerXcss = xcss({
 });
 
 export default function TrelloTopNav({ workspaceName, boardName, userName, onBoardStar }: Props) {
+  const Search = resolveAtlaskitIcon(SearchIcon);
+  const Star = resolveAtlaskitIcon(StarStarredIcon);
+  const More = resolveAtlaskitIcon(ShowMoreVerticalIcon);
+
   return (
     <Box xcss={navXcss} style={{ background: 'rgba(0,0,0,0.35)', color: 'rgba(255,255,255,0.92)' }}>
       <Flex xcss={navInnerXcss} alignItems="center" justifyContent="space-between" gap="space.150">
@@ -75,7 +80,7 @@ export default function TrelloTopNav({ workspaceName, boardName, userName, onBoa
               placeholder="Search"
               elemAfterInput={
                 <Box style={{ display: 'flex', alignItems: 'center', paddingRight: 8 }}>
-                  <SearchIcon label="Search" />
+                  <Search label="Search" />
                 </Box>
               }
             />
@@ -84,14 +89,14 @@ export default function TrelloTopNav({ workspaceName, boardName, userName, onBoa
           <Tooltip content="Star board">
             <IconButton
               appearance="subtle"
-              icon={StarStarredIcon}
+              icon={Star}
               label="Star board"
               onClick={onBoardStar}
             />
           </Tooltip>
 
           <Tooltip content="More">
-            <IconButton appearance="subtle" icon={ShowMoreVerticalIcon} label="More" />
+            <IconButton appearance="subtle" icon={More} label="More" />
           </Tooltip>
 
           <Tooltip content={userName}>

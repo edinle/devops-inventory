@@ -8,6 +8,7 @@ import { draggable, dropTargetForElements, monitorForElements } from '@atlaskit/
 import { Box, Inline, Text } from '@atlaskit/primitives';
 import AddIcon from '@atlaskit/icon/core/add';
 import ShowMoreHorizontalIcon from '@atlaskit/icon/core/show-more-horizontal';
+import { resolveAtlaskitIcon } from '../utils/resolveAtlaskitIcon';
 import type { Equipment, Checkout, Category, User, ActivityEntry } from '../types';
 import CheckOutModal from './CheckOutModal';
 import CheckInModal from './CheckInModal';
@@ -204,6 +205,8 @@ type ColumnProps = {
 function Column({ id, title, color, items, checkouts, users, onCheckOut, onCheckIn, onSendReminder, onOpenDetails }: ColumnProps) {
   const colRef = useRef<HTMLDivElement>(null);
   const [isDragOver, setIsDragOver] = useState(false);
+  const MoreH = resolveAtlaskitIcon(ShowMoreHorizontalIcon);
+  const Add = resolveAtlaskitIcon(AddIcon);
 
   useEffect(() => {
     const el = colRef.current;
@@ -236,7 +239,7 @@ function Column({ id, title, color, items, checkouts, users, onCheckOut, onCheck
 
           <Inline space="space.050" alignBlock="center">
             <Badge>{items.length}</Badge>
-            <IconButton appearance="subtle" icon={ShowMoreHorizontalIcon} label="List actions" />
+            <IconButton appearance="subtle" icon={MoreH} label="List actions" />
           </Inline>
         </Inline>
       </Box>
@@ -280,7 +283,7 @@ function Column({ id, title, color, items, checkouts, users, onCheckOut, onCheck
           })
         )}
         <Box style={{ paddingTop: 4 }}>
-          <Button appearance="subtle" spacing="compact" iconBefore={AddIcon}>
+          <Button appearance="subtle" spacing="compact" iconBefore={Add}>
             Add a card
           </Button>
         </Box>
