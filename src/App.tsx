@@ -13,9 +13,12 @@ import {
 import Dashboard from './components/Dashboard';
 import ActivityLog from './components/ActivityLog';
 import UserManagement from './components/UserManagement';
-import EquipmentManagement from './components/EquipmentManagement';
-import TrelloTopNav from './components/TrelloTopNav';
+import AppTopNavigation from './components/AppTopNavigation';
+import AppSideNavigation, { type AppView } from './components/AppSideNavigation';
+import AppPageHeader from './components/AppPageHeader';
+import InventoryListView from './components/InventoryListView';
 import { Box, Text, xcss } from '@atlaskit/primitives';
+import './app-shell.css';
 
 type FlagData = { id: string; title: string; description: string; type: 'success' | 'info' };
 
@@ -28,7 +31,9 @@ export default function App() {
   const [managers, setManagers] = useState<Manager[]>(MANAGERS);
   const [activityLog, setActivityLog] = useState<ActivityEntry[]>(ACTIVITY_LOG);
   const [flags, setFlags] = useState<FlagData[]>([]);
-  const [selectedTab, setSelectedTab] = useState(0);
+  const [activeView, setActiveView] = useState<AppView>('board');
+  const [inventoryQuery, setInventoryQuery] = useState('');
+  const [inventoryStatusFilter, setInventoryStatusFilter] = useState<'all' | 'active' | 'available' | 'checked_out' | 'archived'>('active');
 
   function addFlag(f: Omit<FlagData, 'id'>) {
     const id = Date.now().toString();
@@ -106,7 +111,53 @@ export default function App() {
   }
 
   const overdueCount = checkouts.filter(c => c.isOverdue).length;
-  const isDashboard = selectedTab === 0;
+
+  const statusOptions = [
+    { label: 'Active items', value: 'active' },
+    { label: 'All items', value: 'all' },
+    { label: 'Available', value: 'available' },
+    { label: 'Checked out', value: 'checked_out' },
+    { label: 'Archived', value: 'archived' },
+  ] as const;
+
+  const selectedStatusOption = statusOptions.find(option => option.value === inventoryStatusFilter) ?? null;
+
+  const headerConfig = {
+    board: {
+      breadcrumbs: ['Inventory', 'Board'],
+      title: `Queues (${overdueCount} overdue)`,
+      primaryActionLabel: 'Inventory list',
+      secondaryActionLabel: 'Identity and access',
+      onPrimaryAction: () => setActiveView('inventory' as AppView),
+      onSecondaryAction: () => setActiveView('iam' as AppView),
+    },
+    inventory: {
+      breadcrumbs: ['Inventory', 'List view'],
+      title: 'Inventory list',
+      primaryActionLabel: 'Board view',
+      secondaryActionLabel: 'Reports',
+      onPrimaryAction: () => setActiveView('board' as AppView),
+      onSecondaryAction: () => setActiveView('activity' as AppView),
+    },
+    iam: {
+      breadcrumbs: ['Administration', 'Identity and access'],
+      title: 'Identity and access management',
+      primaryActionLabel: 'Inventory list',
+      secondaryActionLabel: 'Reports',
+      onPrimaryAction: () => setActiveView('inventory' as AppView),
+      onSecondaryAction: () => setActiveView('activity' as AppView),
+    },
+    activity: {
+      breadcrumbs: ['Inventory', 'Reports'],
+      title: 'Reports and activity',
+      primaryActionLabel: 'Inventory list',
+      secondaryActionLabel: 'Identity and access',
+      onPrimaryAction: () => setActiveView('inventory' as AppView),
+      onSecondaryAction: () => setActiveView('iam' as AppView),
+    },
+  } as const;
+
+  const currentHeader = headerConfig[activeView];
 
   return (
     <Box
@@ -114,37 +165,69 @@ export default function App() {
       style={{
         display: 'flex',
         flexDirection: 'column',
-        background:
-          'linear-gradient(180deg, rgba(0,0,0,0.18) 0%, rgba(0,0,0,0.12) 40%, rgba(0,0,0,0.18) 100%), linear-gradient(135deg, #0079BF 0%, #026AA7 100%)',
+        background: '#F7F8F9',
       }}
     >
-      <TrelloTopNav
-        workspaceName="Workspaces"
-        boardName="Equipment Board"
-        userName={CURRENT_MANAGER.name}
-      />
+      <AppTopNavigation onCreate={() => setActiveView('inventory')} />
 
-      <Box style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-        {selectedTab === 0 && (
-          <Dashboard
-            equipment={equipment}
-            checkouts={checkouts}
-            categories={CATEGORIES}
-            users={users}
-            activityLog={activityLog}
-            role={CURRENT_MANAGER.role}
-            onCheckOut={handleCheckOut}
-            onCheckIn={handleCheckIn}
-            onSendReminder={handleSendReminder}
-            onAddActivity={addActivity}
-            onAddGeneralNote={handleAddGeneralNote}
+      <div className="app-main">
+        <AppSideNavigation activeView={activeView} onSelect={setActiveView} />
+
+        <div className="app-content">
+          <AppPageHeader
+            breadcrumbs={currentHeader.breadcrumbs}
+            title={currentHeader.title}
+            primaryActionLabel={currentHeader.primaryActionLabel}
+            secondaryActionLabel={currentHeader.secondaryActionLabel}
+            onPrimaryAction={currentHeader.onPrimaryAction}
+            onSecondaryAction={currentHeader.onSecondaryAction}
+            filterPlaceholder={activeView === 'inventory' ? 'Search by equipment, tag, or category' : undefined}
+            filterValue={activeView === 'inventory' ? inventoryQuery : undefined}
+            onFilterChange={activeView === 'inventory' ? setInventoryQuery : undefined}
+            selectPlaceholder={activeView === 'inventory' ? 'Choose a status' : undefined}
+            selectOptions={activeView === 'inventory' ? [...statusOptions] : undefined}
+            selectedOption={activeView === 'inventory' ? selectedStatusOption : undefined}
+            onSelectChange={activeView === 'inventory'
+              ? (option) => {
+                if (option) {
+                  setInventoryStatusFilter(option.value as 'all' | 'active' | 'available' | 'checked_out' | 'archived');
+                }
+              }
+              : undefined}
           />
-        )}
-        {selectedTab !== 0 && (
-          <Box style={{ flex: 1, overflowY: 'auto', background: '#F4F5F7' }}>
-            <Box style={{ padding: '24px 32px', maxWidth: 1200, margin: '0 auto' }}>
-              {selectedTab === 1 && <ActivityLog log={activityLog} equipment={equipment} users={users} />}
-              {selectedTab === 2 && (
+
+          <div className="app-view-slot">
+            {activeView === 'board' && (
+              <Dashboard
+                equipment={equipment}
+                checkouts={checkouts}
+                categories={CATEGORIES}
+                users={users}
+                activityLog={activityLog}
+                role={CURRENT_MANAGER.role}
+                onCheckOut={handleCheckOut}
+                onCheckIn={handleCheckIn}
+                onSendReminder={handleSendReminder}
+                onAddActivity={addActivity}
+                onAddGeneralNote={handleAddGeneralNote}
+              />
+            )}
+
+            {activeView === 'inventory' && (
+              <InventoryListView
+                equipment={equipment}
+                categories={CATEGORIES}
+                checkouts={checkouts}
+                users={users}
+                query={inventoryQuery}
+                statusFilter={inventoryStatusFilter}
+                role={CURRENT_MANAGER.role}
+                onArchive={handleArchive}
+              />
+            )}
+
+            {activeView === 'iam' && (
+              <div className="app-pane">
                 <UserManagement
                   users={users}
                   managers={managers}
@@ -153,20 +236,17 @@ export default function App() {
                   onAddManager={handleAddManager}
                   onRemoveManager={handleRemoveManager}
                 />
-              )}
-              {selectedTab === 3 && (
-                <EquipmentManagement
-                  equipment={equipment}
-                  categories={CATEGORIES}
-                  role={CURRENT_MANAGER.role}
-                  onAddEquipment={handleAddEquipment}
-                  onArchive={handleArchive}
-                />
-              )}
-            </Box>
-          </Box>
-        )}
-      </Box>
+              </div>
+            )}
+
+            {activeView === 'activity' && (
+              <div className="app-pane">
+                <ActivityLog log={activityLog} equipment={equipment} users={users} />
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
 
       <FlagGroup onDismissed={(id) => setFlags(prev => prev.filter(f => f.id !== id))}>
         {flags.map(f => (
