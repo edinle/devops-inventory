@@ -1,2 +1,1 @@
 # devops-inventory
-# devops-inventory
