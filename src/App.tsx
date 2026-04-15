@@ -18,6 +18,7 @@ import AppSideNavigation, { type AppView } from './components/AppSideNavigation'
 import AppPageHeader from './components/AppPageHeader';
 import InventoryListView from './components/InventoryListView';
 import Settings from './components/Settings';
+import AuditMode from './components/AuditMode';
 import { Box, Text, xcss } from '@atlaskit/primitives';
 import './app-shell.css';
 
@@ -107,6 +108,11 @@ export default function App() {
     addFlag({ type: 'success', title: 'Profile Updated', description: manager.email });
   }
 
+  function handleUpdateCategory(id: string, name: string, color: string) {
+    setCategories(prev => prev.map(c => c.id === id ? { ...c, name, color } : c));
+    addFlag({ type: 'success', title: 'Category Updated', description: `${name} column updated` });
+  }
+
   function handleAddEquipment(e: Omit<Equipment, 'id' | 'conditionNotes'>) {
     const newItem: Equipment = { ...e, id: `eq-${Date.now()}`, conditionNotes: [] };
     setEquipment(prev => [...prev, newItem]);
@@ -185,6 +191,14 @@ export default function App() {
       onPrimaryAction: () => setActiveView('inventory' as AppView),
       onSecondaryAction: () => setActiveView('activity' as AppView),
     },
+    audit: {
+      breadcrumbs: ['Administration', 'Equipment Audit'],
+      title: 'Equipment Audit',
+      primaryActionLabel: 'Inventory list',
+      secondaryActionLabel: 'Reports',
+      onPrimaryAction: () => setActiveView('inventory' as AppView),
+      onSecondaryAction: () => setActiveView('activity' as AppView),
+    },
   } as const;
 
   const currentHeader = headerConfig[activeView];
@@ -242,6 +256,7 @@ export default function App() {
                 onAddActivity={addActivity}
                 onAddGeneralNote={handleAddGeneralNote}
                 onEditItem={handleEditItem}
+                onUpdateCategory={handleUpdateCategory}
               />
             )}
 
@@ -290,6 +305,17 @@ export default function App() {
                 <Settings 
                   currentManager={CURRENT_MANAGER}
                   onUpdateProfile={handleUpdateProfile}
+                />
+              </div>
+            )}
+
+            {activeView === 'audit' && (
+              <div className="app-pane">
+                <AuditMode 
+                  equipment={equipment}
+                  categories={CATEGORIES}
+                  users={users}
+                  currentRole={CURRENT_MANAGER.role}
                 />
               </div>
             )}

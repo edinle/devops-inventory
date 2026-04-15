@@ -12,7 +12,7 @@ import AddIcon from '@atlaskit/icon/core/add';
 import SettingsIcon from '@atlaskit/icon/core/settings';
 import { resolveAtlaskitIcon } from '../utils/resolveAtlaskitIcon';
 
-export type AppView = 'board' | 'inventory' | 'iam' | 'activity' | 'settings';
+export type AppView = 'board' | 'inventory' | 'iam' | 'activity' | 'settings' | 'audit';
 
 type NavItem = {
   id: AppView;
@@ -39,6 +39,7 @@ const primaryItems: NavItem[] = [
 ];
 
 const auxiliaryItems: AuxItem[] = [
+  { id: 'audit', label: 'Equipment Audit', icon: AddIcon },
   { id: 'settings', label: 'Project settings', icon: SettingsIcon },
 ];
 

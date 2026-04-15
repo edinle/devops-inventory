@@ -2,17 +2,20 @@ import React, { useState, useEffect, useRef } from 'react';
 import Button, { IconButton } from '@atlaskit/button/new';
 import Avatar from '@atlaskit/avatar';
 import Tooltip from '@atlaskit/tooltip';
+import { Lozenge } from '@atlaskit/lozenge';
 import Badge from '@atlaskit/badge';
 import { Box, Inline, Text } from '@atlaskit/primitives';
 import AddIcon from '@atlaskit/icon/core/add';
 import ClockIcon from '@atlaskit/icon/core/clock';
 import StatusWarningIcon from '@atlaskit/icon/core/status-warning';
 import ShowMoreHorizontalIcon from '@atlaskit/icon/core/show-more-horizontal';
+import EditIcon from '@atlaskit/icon/core/edit';
 import { resolveAtlaskitIcon } from '../utils/resolveAtlaskitIcon';
 import type { Equipment, Checkout, Category, User, ActivityEntry } from '../types';
 import CheckOutModal from './CheckOutModal';
 import CheckInModal from './CheckInModal';
 import CardDetailModal from './CardDetailModal';
+import EditColumnModal from './EditColumnModal';
 
 type Props = {
   equipment: Equipment[];
@@ -28,6 +31,7 @@ type Props = {
   onAddActivity: (entry: Omit<ActivityEntry, 'id'>) => void;
   onAddGeneralNote: (equipmentId: string, note: string) => void;
   onEditItem: (id: string, name: string, categoryId: string) => void;
+  onUpdateCategory: (id: string, name: string, color: string) => void;
 };
 
 // Trello-style label strip colors
@@ -90,89 +94,99 @@ function EquipmentCard({
         transition: 'opacity 0.12s ease, transform 0.12s ease',
       }}
     >
-      <Box
-        style={{
-          background: '#FFFFFF',
-          borderRadius: 14,
-          boxShadow: '0 1px 2px rgba(31, 45, 61, 0.12), 0 6px 18px rgba(31, 45, 61, 0.10)',
-          border: '1px solid #E6EAF4',
-          overflow: 'hidden',
-        }}
-      >
-        <Box style={{ padding: '10px 12px 0' }}>
-          <Box
-            style={{
-              width: 58,
-              height: 8,
-              borderRadius: 999,
-              background: labelColor,
-            }}
-          />
-        </Box>
-
-        <Box style={{ padding: '10px 12px 12px' }}>
-        <Inline space="space.050" alignBlock="center">
-          <Box style={{ color: '#172B4D' }}>
-            <Text as="strong" weight="semibold" size="medium" color="inherit">
-              {item.name}
-            </Text>
-          </Box>
-          <Box style={{ color: '#5E6C84' }}>
-            <Text as="span" weight="medium" size="small" color="inherit">
-              {item.tagNumber}
-            </Text>
-          </Box>
-        </Inline>
-
-        {item.conditionNotes.length > 0 && (
-          <Box style={{ marginTop: 8, color: '#6B778C', background: '#F7F8FC', borderRadius: 8, padding: '6px 8px' }}>
-            <Text as="em" size="small" color="inherit">
-              {item.conditionNotes[item.conditionNotes.length - 1]}
-            </Text>
-          </Box>
-        )}
-
-        {checkout && (
-          <Box style={{ marginTop: 8, marginBottom: 8 }}>
-            {isOverdue ? (
-              <Box
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 4,
-                  background: '#FFEBE6',
-                  border: '1px solid #FFD5CC',
-                  color: '#FFFFFF',
-                  borderRadius: 6,
-                  padding: '3px 8px',
-                  fontSize: 11,
-                  fontWeight: 600,
-                }}
-              >
-                <Warning label="Overdue" spacing="spacious" />
-                <span style={{ color: '#C9372C' }}>Overdue {new Date(checkout.dueAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
-              </Box>
-            ) : (
-              <Box
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 4,
-                  background: '#EAFBF2',
-                  border: '1px solid #C7EDD8',
-                  color: '#006644',
-                  borderRadius: 6,
-                  padding: '3px 8px',
-                  fontSize: 11,
-                  fontWeight: 600,
-                }}
-              >
-                <Clock label="Due" spacing="spacious" />
-                <span>Due {new Date(checkout.dueAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
-              </Box>
+      <Box style={{ background: '#FFFFFF', borderRadius: 14, boxShadow: '0 1px 2px rgba(31, 45, 61, 0.12), 0 6px 18px rgba(31, 45, 61, 0.10)', border: '1px solid #E6EAF4', overflow: 'hidden' }}>
+        {/* Trello-style label strip */}
+        <Box
+          style={{
+            width: 58,
+            height: 8,
+            borderRadius: 999,
+            background: labelColor,
+          }}
+        />
+        <Box style={{ padding: '8px 12px' }}>
+          <Box style={{ color: '#6B778C', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Box>
+              <Text as="strong" weight="semibold" size="small" color="inherit">
+                {item.name}
+              </Text>
+              <Text size="small" color="inherit">
+                {item.tagNumber}
+              </Text>
+            </Box>
+            {isOverdue && (
+              <Lozenge appearance="removed">Overdue</Lozenge>
             )}
           </Box>
-        )}
+
+          {item.conditionNotes.length > 0 && (
+            <Box style={{ marginTop: 8, color: '#6B778C', background: '#F7F8FC', borderRadius: 8, padding: '6px 8px' }}>
+              <Text as="em" size="small" color="inherit">
+                {item.conditionNotes[item.conditionNotes.length - 1]}
+              </Text>
+            </Box>
+          )}
+
+          {isCheckedOut && (
+            <Box style={{ marginTop: 8, display: 'inline-flex', alignItems: 'center', gap: 4, background: '#FFEBE6', border: '1px solid #FFD5CC', color: '#FFFFFF', borderRadius: 6, padding: '6px 8px' }}>
+              <Text as="strong" weight="semibold" size="small" color="inherit">
+                Checked Out
+              </Text>
+            </Box>
+          )}
+          {isOverdue && (
+            <Box style={{ marginTop: 8, display: 'inline-flex', alignItems: 'center', gap: 4, background: '#EAFBF2', border: '1px solid #C7EDD8', color: '#006644', borderRadius: 6, padding: '3px 8px', fontSize: 11, fontWeight: 600, }}>
+              <Text as="strong" weight="semibold" size="small" color="inherit">
+                Overdue
+              </Text>
+            </Box>
+          )}
+          <Inline space="space.100" alignBlock="center" spread="space-between">
+            <Inline space="space.050" alignBlock="center">
+              {borrower && (
+                <Tooltip content={borrower.fullName}>
+                  <Avatar size="small" name={borrower.fullName} />
+                </Tooltip>
+              )}
+              {borrower && (
+                <Box style={{ color: '#5E6C84', maxWidth: 132 }}>
+                  <Text as="span" size="small" color="inherit">
+                    {borrower.fullName}
+                  </Text>
+                </Box>
+              )}
+            </Inline>
+            <Inline space="space.050" alignBlock="center">
+              {isCheckedOut ? (
+                <Button
+                  appearance="default"
+                  spacing="compact"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onCheckIn();
+                  }}
+                >
+                  Return
+                </Button>
+              ) : (
+                <Button
+                  appearance="primary"
+                  spacing="compact"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onCheckOut();
+                  }}
+                >
+                  Check Out
+                </Button>
+              </>
+            )}
+          </Inline>
+        </Inline>
+      </Box>
+    </div>
+  );
+        </Box>
 
         <Inline space="space.100" alignBlock="center" spread="space-between">
           <Inline space="space.050" alignBlock="center">
@@ -189,7 +203,6 @@ function EquipmentCard({
               </Box>
             )}
           </Inline>
-
           <Inline space="space.050" alignBlock="center">
             {isCheckedOut ? (
               <>
@@ -216,7 +229,7 @@ function EquipmentCard({
               </>
             ) : (
               <Button
-                appearance="default"
+                appearance="primary"
                 spacing="compact"
                 onClick={(e) => {
                   e.stopPropagation();
@@ -269,6 +282,7 @@ function Column({
   onCheckIn,
   onSendReminder,
   onOpenDetails,
+  role,
 }: ColumnProps) {
   const colRef = useRef<HTMLDivElement>(null);
   const [isDragOver, setIsDragOver] = useState(false);
@@ -291,10 +305,21 @@ function Column({
             </Box>
             {overdueInCol > 0 && <Badge appearance="important">{overdueInCol}</Badge>}
           </Inline>
-
           <Inline space="space.050" alignBlock="center">
-            <Badge>{items.length}</Badge>
-            <IconButton appearance="subtle" icon={MoreH} label="List actions" />
+            <Inline space="space.050" alignBlock="center">
+              <Badge>{items.length}</Badge>
+              <Box style={{ display: 'flex', gap: 4 }}>
+                {role === 'super_admin' && (
+                  <IconButton 
+                    appearance="subtle" 
+                    icon={Edit}
+                    onClick={() => setEditingColumn(id)}
+                    label="Edit column"
+                  />
+                )}
+                <IconButton appearance="subtle" icon={MoreH} label="List actions" />
+              </Box>
+            </Inline>
           </Inline>
         </Inline>
       </Box>
@@ -334,7 +359,7 @@ function Column({
           </Box>
         ) : (
           items.map(item => {
-            const checkout = checkouts.find(c => c.equipmentId === item.id);
+            const checkout = checkouts.find(c => c.equipmentId === item.id) ?? undefined;
             const borrower = checkout ? users.find(u => u.id === checkout.userId) : undefined;
             return (
               <EquipmentCard
@@ -377,6 +402,7 @@ export default function Dashboard({
   onAddActivity,
   onAddGeneralNote,
   onEditItem,
+  onUpdateCategory,
 }: Props) {
   const [checkOutItem, setCheckOutItem] = useState<Equipment | null>(null);
   const [checkInItem, setCheckInItem] = useState<Equipment | null>(null);
@@ -384,6 +410,8 @@ export default function Dashboard({
   const [draggingItemId, setDraggingItemId] = useState<string | null>(null);
   const [itemColumnOverrides, setItemColumnOverrides] = useState<Record<string, string>>({});
   const [columnItems, setColumnItems] = useState<Record<string, string[]>>({});
+  const [editingColumn, setEditingColumn] = useState<string | null>(null);
+  const [editingColumn, setEditingColumn] = useState<string | null>(null);
 
   const checkedOutItems = equipment.filter(e => e.status === 'checked_out');
 
@@ -565,23 +593,35 @@ export default function Dashboard({
 
       {detailItem && (
         <CardDetailModal
-          equipment={detailItem}
-          checkouts={checkouts}
-          users={users}
-          activityLog={activityLog}
+          item={detailItem}
+          checkout={checkouts.find(c => c.equipmentId === detailItem.id)}
+          borrower={users.find(u => u.id === checkouts.find(c => c.equipmentId === detailItem.id)?.userId)}
           onClose={() => setDetailItem(null)}
+          onCheckOut={onCheckOut}
+          onCheckIn={onCheckIn}
+          onSendReminder={onSendReminder}
+          onAddActivity={onAddActivity}
           onAddGeneralNote={onAddGeneralNote}
+          onEditItem={onEditItem}
         />
       )}
 
-      {checkOutItem && (
-        <CheckOutModal
-          equipment={checkOutItem}
-          onClose={() => setCheckOutItem(null)}
-          onConfirm={handleCheckOut}
+      {editingColumn && (
+        <EditColumnModal
+          column={{ id: editingColumn, title: categories.find(c => c.id === editingColumn)?.name || '', color: categories.find(c => c.id === editingColumn)?.color || '' }}
+          categories={categories}
+          onClose={() => setEditingColumn(null)}
+          onConfirm={(id, name, color) => {
+            onUpdateCategory(id, name, color);
+            setEditingColumn(null);
+          }}
         />
       )}
-      {checkInItem && checkInCheckout && (
+    </>
+  );
+}
+
+{checkInItem && checkInCheckout && (
         <CheckInModal
           equipment={checkInItem}
           checkout={checkInCheckout}
