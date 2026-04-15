@@ -36,9 +36,9 @@ export default function AppTopNavigation({ onCreate }: Props) {
         </Tooltip>
 
         <Inline space="space.050" alignBlock="center">
-          <Box style={{ width: 9, height: 9, borderRadius: 2, background: '#1868DB' }} />
+          <Box style={{ width: 9, height: 9, borderRadius: 2, background: '#2774AE' }} />
           <Text as="strong" weight="bold" size="medium" color="color.text.brand">
-            ATLASSIAN
+            UCLA
           </Text>
         </Inline>
 

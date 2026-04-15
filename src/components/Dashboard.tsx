@@ -308,9 +308,78 @@ export default function Dashboard({
   const [checkOutItem, setCheckOutItem] = useState<Equipment | null>(null);
   const [checkInItem, setCheckInItem] = useState<Equipment | null>(null);
   const [detailItem, setDetailItem] = useState<Equipment | null>(null);
+  const [itemColumnOverrides, setItemColumnOverrides] = useState<Record<string, string>>({});
+  const [columnItems, setColumnItems] = useState<Record<string, string[]>>({});
   const boardRef = useRef<HTMLDivElement>(null);
 
   const checkedOutItems = equipment.filter(e => e.status === 'checked_out');
+
+  function getColumnForItem(item: Equipment): string {
+    if (item.status === 'checked_out') return 'checked-out';
+    return itemColumnOverrides[item.id] ?? item.categoryId;
+  }
+
+  useEffect(() => {
+    setColumnItems(prev => {
+      const next: Record<string, string[]> = {};
+
+      const checkedOutIds = equipment
+        .filter(item => item.status === 'checked_out')
+        .map(item => item.id);
+
+      const existingCheckedOut = (prev['checked-out'] ?? []).filter(id => checkedOutIds.includes(id));
+      const newCheckedOut = checkedOutIds.filter(id => !existingCheckedOut.includes(id));
+      next['checked-out'] = [...existingCheckedOut, ...newCheckedOut];
+
+      categories.forEach(category => {
+        const ids = equipment
+          .filter(item => item.status !== 'archived' && item.status !== 'checked_out' && getColumnForItem(item) === category.id)
+          .map(item => item.id);
+
+        const existing = (prev[category.id] ?? []).filter(id => ids.includes(id));
+        const added = ids.filter(id => !existing.includes(id));
+        next[category.id] = [...existing, ...added];
+      });
+
+      return next;
+    });
+  }, [equipment, categories, itemColumnOverrides]);
+
+  useEffect(() => {
+    return monitorForElements({
+      onDrop: ({ source, location }) => {
+        const equipmentId = (source.data as { equipmentId?: string })?.equipmentId;
+        const destination = location.current.dropTargets[0];
+        const destinationColumnId = (destination?.data as { columnId?: string })?.columnId;
+
+        if (!equipmentId || !destinationColumnId) return;
+
+        const item = equipment.find(entry => entry.id === equipmentId);
+        if (!item || item.status === 'archived') return;
+
+        // Checked out items stay in their queue, and available items cannot be dropped into checked out.
+        if (item.status === 'checked_out' || destinationColumnId === 'checked-out') return;
+
+        const sourceColumnId = getColumnForItem(item);
+        if (sourceColumnId === destinationColumnId) return;
+
+        const isValidCategory = categories.some(category => category.id === destinationColumnId);
+        if (!isValidCategory) return;
+
+        setItemColumnOverrides(prev => ({
+          ...prev,
+          [equipmentId]: destinationColumnId,
+        }));
+
+        setColumnItems(prev => {
+          const next: Record<string, string[]> = { ...prev };
+          next[sourceColumnId] = (next[sourceColumnId] ?? []).filter(id => id !== equipmentId);
+          next[destinationColumnId] = [...(next[destinationColumnId] ?? []).filter(id => id !== equipmentId), equipmentId];
+          return next;
+        });
+      },
+    });
+  }, [equipment, categories, itemColumnOverrides]);
 
   function handleCheckOut(co: Omit<Checkout, 'id'>) {
     onCheckOut(co);
@@ -351,13 +420,19 @@ export default function Dashboard({
             id: 'checked-out',
             title: 'Checked Out',
             color: '#172B4D',
-            items: checkedOutItems,
+            items: (columnItems['checked-out'] ?? checkedOutItems.map(item => item.id))
+              .map(id => equipment.find(item => item.id === id))
+              .filter((item): item is Equipment => Boolean(item)),
           },
           ...categories.map(cat => ({
             id: cat.id,
             title: cat.name,
             color: cat.color,
-            items: equipment.filter(e => e.categoryId === cat.id && e.status !== 'archived'),
+            items: (columnItems[cat.id] ?? equipment
+              .filter(item => item.status !== 'archived' && item.status !== 'checked_out' && getColumnForItem(item) === cat.id)
+              .map(item => item.id))
+              .map(id => equipment.find(item => item.id === id))
+              .filter((item): item is Equipment => Boolean(item)),
           })),
         ].map(col => (
           <div
