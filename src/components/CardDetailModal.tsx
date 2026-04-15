@@ -138,7 +138,7 @@ export default function CardDetailModal({ equipment, checkouts, users, activityL
                         value={noteDraft}
                         onChange={(e) => setNoteDraft(e.target.value)}
                         placeholder="Add a more detailed note…"
-                        minimumRows={3}
+                        minimumRows={6}
                       />
                     </Box>
                     <Button appearance="primary" onClick={handleAddNote} isDisabled={!noteDraft.trim()}>

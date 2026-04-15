@@ -208,6 +208,7 @@ export default function App() {
                 onCheckOut={handleCheckOut}
                 onCheckIn={handleCheckIn}
                 onSendReminder={handleSendReminder}
+                onAddEquipment={handleAddEquipment}
                 onAddActivity={addActivity}
                 onAddGeneralNote={handleAddGeneralNote}
               />
