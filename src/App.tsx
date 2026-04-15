@@ -104,6 +104,12 @@ export default function App() {
     addFlag({ type: 'info', title: 'Item Archived', description: reason });
   }
 
+  function handleEditItem(id: string, name: string, categoryId: string) {
+    setEquipment(prev => prev.map(e => e.id === id ? { ...e, name, categoryId } : e));
+    addActivity({ timestamp: new Date().toISOString(), equipmentId: id, action: 'note', actorName: CURRENT_MANAGER.name, note: `Item updated: name="${name}"` });
+    addFlag({ type: 'success', title: 'Item Updated', description: name });
+  }
+
   function handleAddGeneralNote(equipmentId: string, note: string) {
     setEquipment(prev => prev.map(e => e.id === equipmentId ? { ...e, conditionNotes: [...e.conditionNotes, note] } : e));
     addActivity({ timestamp: new Date().toISOString(), equipmentId, action: 'note', actorName: CURRENT_MANAGER.name, note });
@@ -211,6 +217,7 @@ export default function App() {
                 onAddEquipment={handleAddEquipment}
                 onAddActivity={addActivity}
                 onAddGeneralNote={handleAddGeneralNote}
+                onEditItem={handleEditItem}
               />
             )}
 
@@ -228,6 +235,7 @@ export default function App() {
                 onCheckIn={handleCheckIn}
                 onSendReminder={handleSendReminder}
                 onArchive={handleArchive}
+                onEditItem={handleEditItem}
               />
             )}
 

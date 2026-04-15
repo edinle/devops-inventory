@@ -27,6 +27,7 @@ type Props = {
   onAddEquipment: (e: Omit<Equipment, 'id' | 'conditionNotes'>) => void;
   onAddActivity: (entry: Omit<ActivityEntry, 'id'>) => void;
   onAddGeneralNote: (equipmentId: string, note: string) => void;
+  onEditItem: (id: string, name: string, categoryId: string) => void;
 };
 
 // Trello-style label strip colors
@@ -277,7 +278,7 @@ function Column({
   const overdueInCol = items.filter(item => checkouts.find(c => c.equipmentId === item.id)?.isOverdue).length;
 
   return (
-    <Box style={{ width: 320, flexShrink: 0, display: 'flex', flexDirection: 'column', maxHeight: '100%' }}>
+    <Box style={{ width: 320, flexShrink: 0, display: 'flex', flexDirection: 'column', height: '100%' }}>
       {/* List header */}
       <Box style={{ padding: '12px 12px 8px' }}>
         <Inline space="space.100" alignBlock="center" spread="space-between">
@@ -375,6 +376,7 @@ export default function Dashboard({
   onAddEquipment,
   onAddActivity,
   onAddGeneralNote,
+  onEditItem,
 }: Props) {
   const [checkOutItem, setCheckOutItem] = useState<Equipment | null>(null);
   const [checkInItem, setCheckInItem] = useState<Equipment | null>(null);
@@ -497,7 +499,7 @@ export default function Dashboard({
         style={{
           flex: 1,
           overflowX: 'auto',
-          overflowY: 'hidden',
+          overflowY: 'auto',
           display: 'flex',
           alignItems: 'flex-start',
           padding: '16px 16px 18px',
@@ -535,7 +537,9 @@ export default function Dashboard({
               flexShrink: 0,
               display: 'flex',
               flexDirection: 'column',
-              maxHeight: 'calc(100vh - 88px)',
+              maxHeight: 'calc(100vh - 160px)',
+              height: 'fit-content',
+              minHeight: '120px',
               boxShadow: '0 10px 24px rgba(17, 31, 67, 0.24)',
             }}
           >
