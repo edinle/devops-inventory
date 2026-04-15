@@ -1,9 +1,6 @@
 import React, { useState } from 'react';
-import Tabs, { Tab, TabList, TabPanel } from '@atlaskit/tabs';
 import { FlagGroup } from '@atlaskit/flag';
 import Flag from '@atlaskit/flag';
-import Avatar from '@atlaskit/avatar';
-import Badge from '@atlaskit/badge';
 import type { Equipment, Checkout, User, Manager, ActivityEntry } from './types';
 import {
   CATEGORIES,
@@ -17,6 +14,8 @@ import Dashboard from './components/Dashboard';
 import ActivityLog from './components/ActivityLog';
 import UserManagement from './components/UserManagement';
 import EquipmentManagement from './components/EquipmentManagement';
+import TrelloTopNav from './components/TrelloTopNav';
+import { Box, xcss } from '@atlaskit/primitives';
 
 type FlagData = { id: string; title: string; description: string; type: 'success' | 'info' };
 
@@ -100,105 +99,45 @@ export default function App() {
     addFlag({ type: 'info', title: 'Item Archived', description: reason });
   }
 
+  function handleAddGeneralNote(equipmentId: string, note: string) {
+    setEquipment(prev => prev.map(e => e.id === equipmentId ? { ...e, conditionNotes: [...e.conditionNotes, note] } : e));
+    addActivity({ timestamp: new Date().toISOString(), equipmentId, action: 'note', actorName: CURRENT_MANAGER.name, note });
+    addFlag({ type: 'success', title: 'Note Added', description: note.length > 48 ? `${note.slice(0, 48)}…` : note });
+  }
+
   const overdueCount = checkouts.filter(c => c.isOverdue).length;
   const isDashboard = selectedTab === 0;
 
   return (
-    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', background: '#1D7EBF' }}>
-      {/* Top nav — Trello-style */}
-      <div style={{
-        height: '44px', flexShrink: 0,
-        background: 'rgba(0,0,0,0.25)',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '0 12px', gap: '12px',
-      }}>
-        {/* Left: logo + board name */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <div style={{
-            background: '#FFD100', color: '#0052CC',
-            fontWeight: 900, fontSize: '11px', padding: '3px 6px', borderRadius: '3px', letterSpacing: '0.5px',
-          }}>UCLA</div>
-          <span style={{ color: 'white', fontWeight: 700, fontSize: '15px' }}>Photo Studio IMS</span>
-          <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '15px' }}>·</span>
-          {/* Tab switcher inline in nav */}
-          {['Board', 'Activity Log', 'Users', 'Equipment'].map((label, i) => (
-            <button
-              key={i}
-              onClick={() => setSelectedTab(i)}
-              style={{
-                background: selectedTab === i ? 'rgba(255,255,255,0.3)' : 'transparent',
-                border: 'none', borderRadius: '3px',
-                color: 'white', cursor: 'pointer',
-                fontSize: '13px', fontWeight: 500,
-                padding: '4px 10px',
-              }}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-        {/* Right: overdue badge + user */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          {overdueCount > 0 && (
-            <span style={{ background: '#FF5630', color: 'white', borderRadius: '3px', padding: '2px 8px', fontSize: '12px', fontWeight: 700 }}>
-              ⚠ {overdueCount} overdue
-            </span>
-          )}
-          <span style={{
-            background: 'rgba(255,209,0,0.2)', color: '#FFD100',
-            padding: '2px 7px', borderRadius: '3px', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase' as const,
-          }}>
-            {CURRENT_MANAGER.role === 'super_admin' ? 'Super Admin' : 'Manager'}
-          </span>
-          <Avatar size="small" name={CURRENT_MANAGER.name} />
-          <span style={{ color: 'white', fontSize: '13px', fontWeight: 500 }}>{CURRENT_MANAGER.name}</span>
-        </div>
-      </div>
+    <Box
+      xcss={xcss({ height: '100vh' })}
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        background:
+          'linear-gradient(180deg, rgba(0,0,0,0.18) 0%, rgba(0,0,0,0.12) 40%, rgba(0,0,0,0.18) 100%), linear-gradient(135deg, #0079BF 0%, #026AA7 100%)',
+      }}
+    >
+      <TrelloTopNav
+        workspaceName="Workspaces"
+        boardName="Equipment Board"
+        userName={CURRENT_MANAGER.name}
+      />
 
-      {/* Board name bar (only on board view) */}
-      {isDashboard && (
-        <div style={{
-          height: '40px', flexShrink: 0,
-          background: 'rgba(0,0,0,0.15)',
-          display: 'flex', alignItems: 'center',
-          padding: '0 16px', gap: '16px',
-        }}>
-          <span style={{ color: 'white', fontWeight: 700, fontSize: '17px' }}>Equipment Board</span>
-          <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '13px' }}>
-            {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
-          </span>
-          {/* Quick stats */}
-          <div style={{ display: 'flex', gap: '8px', marginLeft: 'auto' }}>
-            {[
-              { label: 'Total', value: equipment.filter(e => e.status !== 'archived').length },
-              { label: 'Out', value: checkouts.length },
-              { label: 'Available', value: equipment.filter(e => e.status === 'available').length },
-            ].map(s => (
-              <div key={s.label} style={{
-                background: 'rgba(255,255,255,0.15)', borderRadius: '3px',
-                padding: '2px 10px', color: 'white', fontSize: '12px',
-                display: 'flex', gap: '5px', alignItems: 'center',
-              }}>
-                <strong>{s.value}</strong> {s.label}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Main content */}
-      <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+      <Box style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
         {selectedTab === 0 && (
           <Dashboard
             equipment={equipment}
             checkouts={checkouts}
             categories={CATEGORIES}
             users={users}
+            activityLog={activityLog}
             role={CURRENT_MANAGER.role}
             onCheckOut={handleCheckOut}
             onCheckIn={handleCheckIn}
             onSendReminder={handleSendReminder}
             onAddActivity={addActivity}
+            onAddGeneralNote={handleAddGeneralNote}
           />
         )}
         {selectedTab !== 0 && (
@@ -227,7 +166,7 @@ export default function App() {
             </div>
           </div>
         )}
-      </div>
+      </Box>
 
       <FlagGroup onDismissed={(id) => setFlags(prev => prev.filter(f => f.id !== id))}>
         {flags.map(f => (
@@ -246,6 +185,6 @@ export default function App() {
           />
         ))}
       </FlagGroup>
-    </div>
+    </Box>
   );
 }

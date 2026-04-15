@@ -1,24 +1,30 @@
 import React, { useState, useEffect, useRef } from 'react';
-import Button from '@atlaskit/button/new';
+import Button, { IconButton } from '@atlaskit/button/new';
 import Avatar from '@atlaskit/avatar';
 import Tooltip from '@atlaskit/tooltip';
 import Lozenge from '@atlaskit/lozenge';
 import Badge from '@atlaskit/badge';
 import { draggable, dropTargetForElements, monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
+import { Box, Inline, Text } from '@atlaskit/primitives';
+import AddIcon from '@atlaskit/icon/core/add';
+import ShowMoreHorizontalIcon from '@atlaskit/icon/core/show-more-horizontal';
 import type { Equipment, Checkout, Category, User, ActivityEntry } from '../types';
 import CheckOutModal from './CheckOutModal';
 import CheckInModal from './CheckInModal';
+import CardDetailModal from './CardDetailModal';
 
 type Props = {
   equipment: Equipment[];
   checkouts: Checkout[];
   categories: Category[];
   users: User[];
+  activityLog: ActivityEntry[];
   role: 'super_admin' | 'manager';
   onCheckOut: (co: Omit<Checkout, 'id'>) => void;
   onCheckIn: (checkoutId: string, note: string) => void;
   onSendReminder: (checkoutId: string) => void;
   onAddActivity: (entry: Omit<ActivityEntry, 'id'>) => void;
+  onAddGeneralNote: (equipmentId: string, note: string) => void;
 };
 
 // Trello-style label strip colors
@@ -33,9 +39,10 @@ type CardProps = {
   onCheckOut: () => void;
   onCheckIn: () => void;
   onSendReminder: () => void;
+  onOpenDetails: () => void;
 };
 
-function EquipmentCard({ item, checkout, borrower, onCheckOut, onCheckIn, onSendReminder }: CardProps) {
+function EquipmentCard({ item, checkout, borrower, onCheckOut, onCheckIn, onSendReminder, onOpenDetails }: CardProps) {
   const cardRef = useRef<HTMLDivElement>(null);
   const isCheckedOut = item.status === 'checked_out';
   const isOverdue = checkout?.isOverdue ?? false;
@@ -49,41 +56,58 @@ function EquipmentCard({ item, checkout, borrower, onCheckOut, onCheckIn, onSend
   const labelColor = isOverdue ? LABEL_OVERDUE : isCheckedOut ? LABEL_CHECKED_OUT : LABEL_AVAILABLE;
 
   return (
-    <div
+    <Box
       ref={cardRef}
       style={{
         background: 'white',
-        borderRadius: '3px',
+        borderRadius: 8,
         boxShadow: '0 1px 0 rgba(9,30,66,0.25)',
-        marginBottom: '8px',
+        marginBottom: 8,
         cursor: 'grab',
         position: 'relative',
         overflow: 'hidden',
-        transition: 'box-shadow 0.12s',
+        transition: 'box-shadow 0.12s, transform 0.12s',
       }}
-      onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 4px 8px rgba(9,30,66,0.25)')}
-      onMouseLeave={e => (e.currentTarget.style.boxShadow = '0 1px 0 rgba(9,30,66,0.25)')}
+      onMouseEnter={(e: React.MouseEvent<HTMLDivElement>) => {
+        e.currentTarget.style.boxShadow = '0 4px 8px rgba(9,30,66,0.25)';
+        e.currentTarget.style.transform = 'translateY(-1px)';
+      }}
+      onMouseLeave={(e: React.MouseEvent<HTMLDivElement>) => {
+        e.currentTarget.style.boxShadow = '0 1px 0 rgba(9,30,66,0.25)';
+        e.currentTarget.style.transform = 'translateY(0px)';
+      }}
+      onClick={onOpenDetails}
     >
       {/* Trello-style colored label strip at top */}
-      <div style={{ height: '6px', background: labelColor, borderRadius: '3px 3px 0 0' }} />
+      <Box style={{ height: 6, background: labelColor }} />
 
-      <div style={{ padding: '6px 8px 8px' }}>
+      <Box style={{ padding: '8px 10px 10px' }}>
         {/* Title */}
-        <div style={{ fontWeight: 500, fontSize: '14px', color: '#172B4D', lineHeight: '1.4', marginBottom: '4px' }}>
-          {item.name}{' '}
-          <span style={{ color: '#5E6C84', fontWeight: 400, fontSize: '12px' }}>{item.tagNumber}</span>
-        </div>
+        <Inline space="space.050" alignBlock="center">
+          <Box style={{ color: '#172B4D' }}>
+            <Text as="strong" weight="semibold" size="medium" color="inherit">
+              {item.name}
+            </Text>
+          </Box>
+          <Box style={{ color: '#5E6C84' }}>
+            <Text as="span" weight="medium" size="small" color="inherit">
+              {item.tagNumber}
+            </Text>
+          </Box>
+        </Inline>
 
         {/* Condition note */}
         {item.conditionNotes.length > 0 && (
-          <div style={{ fontSize: '11px', color: '#97A0AF', fontStyle: 'italic', marginBottom: '4px' }}>
-            📋 {item.conditionNotes[item.conditionNotes.length - 1]}
-          </div>
+          <Box style={{ marginTop: 4, color: '#97A0AF' }}>
+            <Text as="em" size="small" color="inherit">
+              {item.conditionNotes[item.conditionNotes.length - 1]}
+            </Text>
+          </Box>
         )}
 
         {/* Due date / overdue row */}
         {checkout && (
-          <div style={{ marginBottom: '6px' }}>
+          <Box style={{ marginTop: 8, marginBottom: 8 }}>
             {isOverdue ? (
               <span style={{
                 display: 'inline-flex', alignItems: 'center', gap: '3px',
@@ -101,58 +125,66 @@ function EquipmentCard({ item, checkout, borrower, onCheckOut, onCheckIn, onSend
                 📅 Due {new Date(checkout.dueAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
               </span>
             )}
-          </div>
+          </Box>
         )}
 
         {/* Bottom row: avatar + action buttons */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '4px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <Inline space="space.100" alignBlock="center" spread="space-between">
+          <Inline space="space.050" alignBlock="center">
             {borrower && (
               <Tooltip content={borrower.fullName}>
                 <Avatar size="small" name={borrower.fullName} />
               </Tooltip>
             )}
             {borrower && (
-              <span style={{ fontSize: '11px', color: '#5E6C84' }}>{borrower.fullName}</span>
+              <Box style={{ color: '#5E6C84' }}>
+                <Text as="span" size="small" color="inherit">
+                  {borrower.fullName}
+                </Text>
+              </Box>
             )}
-          </div>
-          <div style={{ display: 'flex', gap: '4px', flexShrink: 0 }}>
+          </Inline>
+
+          <Inline space="space.050" alignBlock="center">
             {isCheckedOut ? (
               <>
-                <button
-                  onClick={onCheckIn}
-                  style={{
-                    background: '#0052CC', color: 'white', border: 'none', borderRadius: '3px',
-                    padding: '2px 8px', fontSize: '11px', fontWeight: 600, cursor: 'pointer',
+                <Button
+                  appearance="primary"
+                  spacing="compact"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onCheckIn();
                   }}
                 >
                   Return
-                </button>
-                <button
-                  onClick={onSendReminder}
-                  style={{
-                    background: '#F4F5F7', color: '#172B4D', border: 'none', borderRadius: '3px',
-                    padding: '2px 8px', fontSize: '11px', fontWeight: 500, cursor: 'pointer',
+                </Button>
+                <Button
+                  appearance="subtle"
+                  spacing="compact"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onSendReminder();
                   }}
                 >
                   Remind
-                </button>
+                </Button>
               </>
             ) : (
-              <button
-                onClick={onCheckOut}
-                style={{
-                  background: '#0052CC', color: 'white', border: 'none', borderRadius: '3px',
-                  padding: '2px 10px', fontSize: '11px', fontWeight: 600, cursor: 'pointer',
+              <Button
+                appearance="primary"
+                spacing="compact"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onCheckOut();
                 }}
               >
                 Check Out
-              </button>
+              </Button>
             )}
-          </div>
-        </div>
-      </div>
-    </div>
+          </Inline>
+        </Inline>
+      </Box>
+    </Box>
   );
 }
 
@@ -166,9 +198,10 @@ type ColumnProps = {
   onCheckOut: (item: Equipment) => void;
   onCheckIn: (item: Equipment) => void;
   onSendReminder: (item: Equipment) => void;
+  onOpenDetails: (item: Equipment) => void;
 };
 
-function Column({ id, title, color, items, checkouts, users, onCheckOut, onCheckIn, onSendReminder }: ColumnProps) {
+function Column({ id, title, color, items, checkouts, users, onCheckOut, onCheckIn, onSendReminder, onOpenDetails }: ColumnProps) {
   const colRef = useRef<HTMLDivElement>(null);
   const [isDragOver, setIsDragOver] = useState(false);
 
@@ -187,37 +220,29 @@ function Column({ id, title, color, items, checkouts, users, onCheckOut, onCheck
   const overdueInCol = items.filter(item => checkouts.find(c => c.equipmentId === item.id)?.isOverdue).length;
 
   return (
-    <div style={{ width: '272px', flexShrink: 0, display: 'flex', flexDirection: 'column', maxHeight: '100%' }}>
+    <Box style={{ width: 272, flexShrink: 0, display: 'flex', flexDirection: 'column', maxHeight: '100%' }}>
       {/* List header */}
-      <div style={{
-        padding: '10px 12px 8px',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        borderRadius: '3px 3px 0 0',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          {/* Color dot */}
-          <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: color, flexShrink: 0 }} />
-          <span style={{ fontWeight: 700, fontSize: '14px', color: '#172B4D' }}>{title}</span>
-          {overdueInCol > 0 && (
-            <span style={{
-              background: '#FF5630', color: 'white',
-              borderRadius: '3px', padding: '0px 5px', fontSize: '11px', fontWeight: 700,
-            }}>
-              {overdueInCol}
-            </span>
-          )}
-        </div>
-        <span style={{
-          color: '#5E6C84', fontSize: '12px', fontWeight: 600,
-          background: 'rgba(9,30,66,0.08)', borderRadius: '50%',
-          width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-        }}>
-          {items.length}
-        </span>
-      </div>
+      <Box style={{ padding: '10px 10px 8px' }}>
+        <Inline space="space.100" alignBlock="center" spread="space-between">
+          <Inline space="space.100" alignBlock="center">
+            <Box style={{ width: 10, height: 10, borderRadius: 999, background: color, flexShrink: 0 }} />
+            <Box style={{ color: '#172B4D' }}>
+              <Text as="strong" weight="bold" size="medium" color="inherit">
+                {title}
+              </Text>
+            </Box>
+            {overdueInCol > 0 && <Badge appearance="important">{overdueInCol}</Badge>}
+          </Inline>
+
+          <Inline space="space.050" alignBlock="center">
+            <Badge>{items.length}</Badge>
+            <IconButton appearance="subtle" icon={ShowMoreHorizontalIcon} label="List actions" />
+          </Inline>
+        </Inline>
+      </Box>
 
       {/* Card list */}
-      <div
+      <Box
         ref={colRef}
         style={{
           flex: 1,
@@ -230,12 +255,12 @@ function Column({ id, title, color, items, checkouts, users, onCheckOut, onCheck
         }}
       >
         {items.length === 0 ? (
-          <div style={{
+          <Box style={{
             textAlign: 'center', color: 'rgba(9,30,66,0.35)',
             fontSize: '12px', padding: '16px 8px', fontStyle: 'italic',
           }}>
             No items
-          </div>
+          </Box>
         ) : (
           items.map(item => {
             const checkout = checkouts.find(c => c.equipmentId === item.id);
@@ -249,18 +274,37 @@ function Column({ id, title, color, items, checkouts, users, onCheckOut, onCheck
                 onCheckOut={() => onCheckOut(item)}
                 onCheckIn={() => onCheckIn(item)}
                 onSendReminder={() => onSendReminder(item)}
+                onOpenDetails={() => onOpenDetails(item)}
               />
             );
           })
         )}
-      </div>
-    </div>
+        <Box style={{ paddingTop: 4 }}>
+          <Button appearance="subtle" spacing="compact" iconBefore={AddIcon}>
+            Add a card
+          </Button>
+        </Box>
+      </Box>
+    </Box>
   );
 }
 
-export default function Dashboard({ equipment, checkouts, categories, users, role, onCheckOut, onCheckIn, onSendReminder }: Props) {
+export default function Dashboard({
+  equipment,
+  checkouts,
+  categories,
+  users,
+  activityLog,
+  role,
+  onCheckOut,
+  onCheckIn,
+  onSendReminder,
+  onAddActivity,
+  onAddGeneralNote,
+}: Props) {
   const [checkOutItem, setCheckOutItem] = useState<Equipment | null>(null);
   const [checkInItem, setCheckInItem] = useState<Equipment | null>(null);
+  const [detailItem, setDetailItem] = useState<Equipment | null>(null);
   const boardRef = useRef<HTMLDivElement>(null);
 
   const checkedOutItems = equipment.filter(e => e.status === 'checked_out');
@@ -335,10 +379,22 @@ export default function Dashboard({ equipment, checkouts, categories, users, rol
               onCheckOut={setCheckOutItem}
               onCheckIn={setCheckInItem}
               onSendReminder={handleReminder}
+              onOpenDetails={setDetailItem}
             />
           </div>
         ))}
       </div>
+
+      {detailItem && (
+        <CardDetailModal
+          equipment={detailItem}
+          checkouts={checkouts}
+          users={users}
+          activityLog={activityLog}
+          onClose={() => setDetailItem(null)}
+          onAddGeneralNote={onAddGeneralNote}
+        />
+      )}
 
       {checkOutItem && (
         <CheckOutModal
